@@ -2,6 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import '../styles/modal.css';
+
+// Colors for project status indicators
+const COLORS = ['#0b5fff', '#764ba2', '#ff6b6b', '#17a2b8', '#00bcd4', '#20c997'];
+
+function getColorForProject(index) {
+  return COLORS[index % COLORS.length];
+}
 
 export default function Projects() {
   const { user } = useAuth();
@@ -82,23 +90,23 @@ export default function Projects() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1>Projects</h1>
-        {canAddProject && (
-          <button
-            className="btn"
-            onClick={() => setShowForm(!showForm)}
-            style={{ background: '#0b5fff', color: 'white', padding: '8px 16px', marginLeft: 0 }}
-          >
-            {showForm ? 'Cancel' : '+ Add Project'}
-          </button>
-        )}
       </div>
 
       {error && <div style={{ color: 'red', marginBottom: 12, padding: 12, background: '#ffe6e6', borderRadius: 4 }}>{error}</div>}
 
       {canAddProject && showForm && (
-        <div className="card" style={{ marginBottom: 24 }}>
-          <h3>Create New Project</h3>
-          <form onSubmit={handleSubmit}>
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create New Project</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowForm(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 12 }}>
               <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Project Name *</label>
               <input
@@ -148,16 +156,25 @@ export default function Projects() {
               </div>
             </div>
 
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setShowForm(false)}
+                style={{ background: '#6c757d', color: 'white', padding: '8px 16px' }}
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 className="btn"
-                style={{ background: '#28a745', color: 'white', padding: '8px 16px', marginLeft: 0 }}
+                style={{ background: '#28a745', color: 'white', padding: '8px 16px' }}
               >
                 Create Project
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
 
@@ -167,128 +184,191 @@ export default function Projects() {
         ) : (
           <div>
             {/* Current Projects Section */}
-            <div style={{ marginBottom: 32 }}>
-              <h3 style={{ marginBottom: 16 }}>Current Projects ({projects.filter(p => p.status !== 'completed').length})</h3>
-              {projects.filter(p => p.status !== 'completed').length === 0 ? (
-                <div className="small" style={{ padding: 12, background: '#f0f4f8', borderRadius: 6 }}>No active projects.</div>
-              ) : (
-                <div>
-                  {projects.filter(p => p.status !== 'completed').map(project => (
+            {projects.filter(p => p.status !== 'completed').length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <h3 style={{ marginBottom: 16 }}>Current Projects ({projects.filter(p => p.status !== 'completed').length})</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                  {projects.filter(p => p.status !== 'completed').map((project, index) => (
                     <div
                       key={project.id}
-                      onClick={() => {
-                        console.log('Clicking project with ID:', project.id, 'Full project:', project);
-                        navigate(`/projects/${project.id}`);
-                      }}
                       style={{
-                        padding: 12,
-                        borderBottom: '1px solid #eee',
+                        background: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 8,
+                        padding: 16,
                         cursor: 'pointer',
-                        transition: 'background 0.2s',
+                        transition: 'all 0.2s ease',
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 200,
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
                     >
-                      <div style={{ fontWeight: 600, fontSize: '1.1rem', color: '#0b5fff' }}>
-                        {project.name}
+                      {/* Header with color dot and menu */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <div
+                          style={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            backgroundColor: getColorForProject(index),
+                            flexShrink: 0,
+                          }}
+                        />
+                        <button
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: '1.2rem',
+                            color: '#cbd5e0',
+                            cursor: 'pointer',
+                            padding: 0,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Menu functionality can be added here
+                          }}
+                        >
+                          ⋯
+                        </button>
                       </div>
+
+                      {/* Title */}
+                      <h4 style={{ margin: '0 0 8px 0', color: '#1e293b', fontSize: '1.1rem', fontWeight: 600 }}>
+                        {project.name}
+                      </h4>
+
+                      {/* Description */}
                       {project.description && (
-                        <div style={{ marginTop: 4, color: '#666', fontSize: '0.95rem' }}>
-                          {project.description}
-                        </div>
+                        <p style={{ margin: '0 0 12px 0', color: '#64748b', fontSize: '0.9rem', flex: 1 }}>
+                          {project.description.length > 100
+                            ? project.description.substring(0, 100) + '...'
+                            : project.description}
+                        </p>
                       )}
-                      
-                      {/* Progress bar */}
+
+                      {/* Progress Bar if tasks exist */}
                       {project.total_tasks > 0 && (
-                        <div style={{ marginTop: 8 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 4 }}>
+                        <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 6, color: '#94a3b8' }}>
                             <span>Progress</span>
-                            <span>{project.progress}% ({project.completed_tasks}/{project.total_tasks})</span>
+                            <span>{project.progress}%</span>
                           </div>
-                          <div style={{ width: '100%', height: 8, background: '#e9ecef', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ width: '100%', height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
                             <div style={{
                               height: '100%',
                               width: `${project.progress}%`,
-                              background: '#28a745',
+                              background: getColorForProject(index),
                               transition: 'width 0.3s'
                             }} />
                           </div>
                         </div>
                       )}
-                      
-                      <div style={{ marginTop: 8, display: 'flex', gap: 16, fontSize: '0.9rem', color: '#888' }}>
-                        {project.start_date && (
-                          <span>Start: {new Date(project.start_date).toLocaleDateString()}</span>
-                        )}
+
+                      {/* Status */}
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f1f5f9', fontSize: '0.85rem', color: '#94a3b8' }}>
                         {project.due_date && (
-                          <span style={{ color: new Date(project.due_date) < new Date() ? '#ff6b6b' : '#888' }}>
+                          <div>
                             Due: {new Date(project.due_date).toLocaleDateString()}
-                          </span>
+                          </div>
                         )}
-                        <span style={{ color: '#28a745' }}>
-                          Active
-                        </span>
                       </div>
-                      {project.owner_name && (
-                        <div style={{ marginTop: 4, fontSize: '0.85rem', color: '#999' }}>
-                          Owner: {project.owner_name}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Completed Projects Section */}
             {projects.filter(p => p.status === 'completed').length > 0 && (
               <div style={{ paddingTop: 24, borderTop: '2px solid #e2e8f0' }}>
                 <h3 style={{ marginBottom: 16, color: '#64748b' }}>Completed Projects ({projects.filter(p => p.status === 'completed').length})</h3>
-                <div>
-                  {projects.filter(p => p.status === 'completed').map(project => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                  {projects.filter(p => p.status === 'completed').map((project, index) => (
                     <div
                       key={project.id}
-                      onClick={() => {
-                        console.log('Clicking project with ID:', project.id, 'Full project:', project);
-                        navigate(`/projects/${project.id}`);
-                      }}
                       style={{
-                        padding: 12,
-                        borderBottom: '1px solid #eee',
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 8,
+                        padding: 16,
                         cursor: 'pointer',
-                        transition: 'background 0.2s',
-                        opacity: 0.7,
+                        transition: 'all 0.2s ease',
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 200,
+                        opacity: 0.8,
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
                     >
-                      <div style={{ fontWeight: 600, fontSize: '1.1rem', color: '#64748b' }}>
+                      {/* Header with color dot and menu */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <div
+                          style={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            backgroundColor: '#cbd5e0',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <button
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: '1.2rem',
+                            color: '#cbd5e0',
+                            cursor: 'pointer',
+                            padding: 0,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                        >
+                          ⋯
+                        </button>
+                      </div>
+
+                      {/* Title */}
+                      <h4 style={{ margin: '0 0 8px 0', color: '#64748b', fontSize: '1.1rem', fontWeight: 600 }}>
                         {project.name} <span style={{ fontSize: '1rem' }}>✓</span>
-                      </div>
+                      </h4>
+
+                      {/* Description */}
                       {project.description && (
-                        <div style={{ marginTop: 4, color: '#999', fontSize: '0.95rem' }}>
-                          {project.description}
-                        </div>
+                        <p style={{ margin: '0 0 12px 0', color: '#94a3b8', fontSize: '0.9rem', flex: 1 }}>
+                          {project.description.length > 100
+                            ? project.description.substring(0, 100) + '...'
+                            : project.description}
+                        </p>
                       )}
-                      
-                      <div style={{ marginTop: 8, display: 'flex', gap: 16, fontSize: '0.9rem', color: '#999' }}>
-                        {project.start_date && (
-                          <span>Start: {new Date(project.start_date).toLocaleDateString()}</span>
-                        )}
+
+                      {/* Status */}
+                      <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid #e2e8f0', fontSize: '0.85rem', color: '#94a3b8' }}>
                         {project.due_date && (
-                          <span>
+                          <div>
                             Due: {new Date(project.due_date).toLocaleDateString()}
-                          </span>
+                          </div>
                         )}
-                        <span style={{ color: '#999', fontWeight: 500 }}>
-                          Completed
-                        </span>
                       </div>
-                      {project.owner_name && (
-                        <div style={{ marginTop: 4, fontSize: '0.85rem', color: '#bbb' }}>
-                          Owner: {project.owner_name}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -297,6 +377,38 @@ export default function Projects() {
           </div>
         )}
       </div>
+
+      {canAddProject && (
+        <button
+          className="btn"
+          onClick={() => setShowForm(!showForm)}
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            background: '#0b5fff',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '50px',
+            border: 'none',
+            fontSize: '1rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(11, 95, 255, 0.3)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(11, 95, 255, 0.4)';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(11, 95, 255, 0.3)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          + New Project
+        </button>
+      )}
     </div>
   );
 }

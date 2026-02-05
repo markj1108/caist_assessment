@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,17 @@ export function AuthProvider({ children }) {
   });
   const navigate = useNavigate();
 
+  function saveToken(token) {
+    if (token) localStorage.setItem('token', token);
+    else localStorage.removeItem('token');
+  }
+
+  const logout = useCallback(() => {
+    saveToken(null);
+    setUser(null);
+    navigate('/', { replace: true });
+  }, [navigate]);
+
   useEffect(() => {
     // keep user in sync with localStorage
     if (user) {
@@ -19,13 +30,34 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  function saveToken(token) {
-    if (token) localStorage.setItem('token', token);
-    else localStorage.removeItem('token');
-  }
+  // Periodically check if user account is still active
+  useEffect(() => {
+    if (!user) return;
+
+    const checkUserStatus = async () => {
+      try {
+        const response = await api.get(`/users/${user.id}`);
+        // Log out only if explicitly disabled (is_active === false)
+        if (response && response.is_active === false) {
+          logout();
+        }
+      } catch (err) {
+        // If we can't fetch user status, don't do anything
+      }
+    };
+
+    const interval = setInterval(checkUserStatus, 2000); // Check every 2 seconds
+    return () => clearInterval(interval);
+  }, [user, logout]);
 
   async function login(email, password) {
     const data = await api.post('/auth/login', { email, password });
+    
+
+    if (data.user.is_active === false) {
+      throw new Error('Your account has been disabled. Please contact an administrator.');
+    }
+    
     // backend returns { token, user }
     saveToken(data.token);
     setUser(data.user);
@@ -38,12 +70,6 @@ export function AuthProvider({ children }) {
     saveToken(data.token);
     setUser(data.user);
     return data.user;
-  }
-
-  function logout() {
-    saveToken(null);
-    setUser(null);
-    navigate('/', { replace: true });
   }
 
   return (

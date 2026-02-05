@@ -34,7 +34,7 @@ body {
   justify-content: center;
   min-height: 100vh;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: whitesmoke ;
   padding: 20px;
   overflow: hidden;
   position: fixed;
@@ -114,7 +114,7 @@ body {
 
 .login-btn {
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #539DDA;
   color: white;
   border: none;
   padding: 12px;
@@ -330,6 +330,16 @@ textarea {
   font-size: 1.2rem;
   width: 24px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-icon-svg {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+  transition: all 0.2s ease;
 }
 
 .sidebar-label {

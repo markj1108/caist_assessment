@@ -62,6 +62,27 @@ router.get('/available', authenticate, requireRole('team_leader'), async (req, r
 
 // ===== PARAMETERIZED ROUTES (come after specific routes) =====
 
+// GET /users/:id - get user by ID
+router.get('/:id', authenticate, async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  
+  try {
+    const { rows } = await db.query(
+      `SELECT u.id, u.name, u.email, u.role_id, r.name as role_name, u.is_active, u.created_at
+       FROM users u
+       LEFT JOIN roles r ON r.id = u.role_id
+       WHERE u.id = $1`,
+      [userId]
+    );
+    
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // PUT /users/:id/role - change user role (admin only)
 router.put('/:id/role', authenticate, requireRole('admin'), async (req, res) => {
   const userId = parseInt(req.params.id, 10);

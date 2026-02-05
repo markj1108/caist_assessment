@@ -14,35 +14,46 @@ import { useAuth } from './contexts/AuthContext';
 function App() {
   const { user, logout } = useAuth();
 
+  // Allow access if user is active (is_active is not false)
+  // This allows both is_active === true and undefined/null for backward compatibility
+  const isUserActive = user && user.is_active !== false;
+  
+  // If user is logged in but explicitly disabled, log them out immediately
+  React.useEffect(() => {
+    if (user && user.is_active === false) {
+      logout();
+    }
+  }, [user, logout]);
+
   return (
     <div className="app">
       <div className="app-container">
-        {user && <Sidebar />}
+        {isUserActive && <Sidebar />}
         <main className="container">
           <Routes>
-            <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
-            <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
+            <Route path="/" element={isUserActive ? <Navigate to="/dashboard" replace /> : <Login />} />
+            <Route path="/register" element={isUserActive ? <Navigate to="/dashboard" replace /> : <Register />} />
             <Route
               path="/dashboard"
-              element={user ? <Dashboard /> : <Navigate to="/" replace />}
+              element={isUserActive ? <Dashboard /> : <Navigate to="/" replace />}
             />
             <Route
               path="/members"
-              element={user ? <Members /> : <Navigate to="/" replace />}
+              element={isUserActive ? <Members /> : <Navigate to="/" replace />}
             />
             <Route              path="/projects/:projectId"
-              element={user ? <ProjectDetail /> : <Navigate to="/" replace />}
+              element={isUserActive ? <ProjectDetail /> : <Navigate to="/" replace />}
             />
             <Route              path="/tasks"
-              element={user ? <Tasks /> : <Navigate to="/" replace />}
+              element={isUserActive ? <Tasks /> : <Navigate to="/" replace />}
             />
             <Route
               path="/projects"
-              element={user ? <Projects /> : <Navigate to="/" replace />}
+              element={isUserActive ? <Projects /> : <Navigate to="/" replace />}
             />
             <Route
               path="/tasks/:taskId"
-              element={user ? <TaskDetail /> : <Navigate to="/" replace />}
+              element={isUserActive ? <TaskDetail /> : <Navigate to="/" replace />}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

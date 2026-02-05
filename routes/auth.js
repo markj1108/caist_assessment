@@ -44,13 +44,13 @@ router.post('/login', async (req, res) => {
   if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
 
   try {
-    const { rows } = await db.query('SELECT id, password_hash, name, email, role_id FROM users WHERE email = $1', [email]);
+    const { rows } = await db.query('SELECT id, password_hash, name, email, role_id, is_active FROM users WHERE email = $1', [email]);
     if (rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
     const user = rows[0];
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role_id: user.role_id } });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role_id: user.role_id, is_active: user.is_active } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/modal.css';
 
 export default function ProjectDetail() {
   const { projectId } = useParams();
@@ -13,6 +14,8 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [alert, setAlert] = useState({ show: false, type: 'success', message: '' });
+  const [confirmDialog, setConfirmDialog] = useState({ show: false, type: '', action: null, title: '', message: '' });
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -177,16 +180,14 @@ export default function ProjectDetail() {
           )}
           {canAddTask && project.status !== 'completed' && (
             <button
-              onClick={async () => {
-                if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-                  try {
-                    await api.del(`/projects/${projectId}`);
-                    alert('Project deleted successfully');
-                    navigate('/projects');
-                  } catch (err) {
-                    setError(err.body?.error || err.message || 'Failed to delete project');
-                  }
-                }
+              onClick={() => {
+                setConfirmDialog({
+                  show: true,
+                  type: 'delete',
+                  action: 'deleteProject',
+                  title: 'Delete Project',
+                  message: 'Are you sure you want to delete this project? This action cannot be undone.'
+                });
               }}
               style={{
                 background: '#ff6b6b',
@@ -241,9 +242,9 @@ export default function ProjectDetail() {
                 try {
                   await api.put(`/projects/${projectId}/complete`);
                   setProject(prev => ({ ...prev, status: 'completed' }));
-                  alert('Project marked as completed!');
+                  setAlert({ show: true, type: 'success', message: 'Project marked as completed!' });
                 } catch (err) {
-                  alert(err.body?.error || err.message || 'Failed to complete project');
+                  setAlert({ show: true, type: 'error', message: err.body?.error || err.message || 'Failed to complete project' });
                 }
               }}
               style={{
@@ -275,9 +276,18 @@ export default function ProjectDetail() {
       )}
 
       {canAddTask && showForm && (
-        <div className="card" style={{ marginBottom: 24 }}>
-          <h3>Create New Task</h3>
-          <form onSubmit={handleSubmit}>
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create New Task</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowForm(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 12 }}>
               <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Task Title *</label>
               <input
@@ -347,16 +357,25 @@ export default function ProjectDetail() {
               </div>
             </div>
 
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setShowForm(false)}
+                style={{ background: '#6c757d', color: 'white', padding: '8px 16px' }}
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 className="btn"
-                style={{ background: '#28a745', color: 'white', padding: '8px 16px', marginLeft: 0 }}
+                style={{ background: '#28a745', color: 'white', padding: '8px 16px' }}
               >
                 Create Task
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
 
@@ -395,15 +414,15 @@ export default function ProjectDetail() {
                 </div>
                 {canAddTask && project.status !== 'completed' && (
                   <button
-                    onClick={async () => {
-                      if (window.confirm('Are you sure you want to delete this task?')) {
-                        try {
-                          await api.del(`/tasks/${task.id}`);
-                          setTasks(tasks.filter(t => t.id !== task.id));
-                        } catch (err) {
-                          setError(err.body?.error || err.message || 'Failed to delete task');
-                        }
-                      }
+                    onClick={() => {
+                      setConfirmDialog({
+                        show: true,
+                        type: 'delete',
+                        action: 'deleteTask',
+                        title: 'Delete Task',
+                        message: 'Are you sure you want to delete this task?',
+                        taskId: task.id
+                      });
                     }}
                     style={{
                       background: '#ff6b6b',
@@ -425,6 +444,90 @@ export default function ProjectDetail() {
           </div>
         )}
       </div>
+
+      {alert.show && (
+        <div className="modal-overlay" onClick={() => setAlert({ ...alert, show: false })}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2>{alert.type === 'success' ? '✓ Success' : '⚠ Error'}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setAlert({ ...alert, show: false })}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '1.1rem', color: alert.type === 'success' ? '#28a745' : '#c41e3a', marginBottom: 20 }}>
+                {alert.message}
+              </p>
+              <button
+                onClick={() => setAlert({ ...alert, show: false })}
+                className="btn"
+                style={{ background: alert.type === 'success' ? '#28a745' : '#c41e3a', color: 'white', padding: '8px 24px' }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDialog.show && (
+        <div className="modal-overlay" onClick={() => setConfirmDialog({ ...confirmDialog, show: false })}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2>{confirmDialog.title}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setConfirmDialog({ ...confirmDialog, show: false })}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '1rem', color: '#64748b', marginBottom: 24 }}>
+                {confirmDialog.message}
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button
+                  onClick={() => setConfirmDialog({ ...confirmDialog, show: false })}
+                  className="btn"
+                  style={{ background: '#6c757d', color: 'white', padding: '8px 24px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      if (confirmDialog.action === 'deleteProject') {
+                        await api.del(`/projects/${projectId}`);
+                        setConfirmDialog({ ...confirmDialog, show: false });
+                        setAlert({ show: true, type: 'success', message: 'Project deleted successfully' });
+                        setTimeout(() => navigate('/projects'), 1500);
+                      } else if (confirmDialog.action === 'deleteTask') {
+                        await api.del(`/tasks/${confirmDialog.taskId}`);
+                        setTasks(tasks.filter(t => t.id !== confirmDialog.taskId));
+                        setConfirmDialog({ ...confirmDialog, show: false });
+                        setAlert({ show: true, type: 'success', message: 'Task deleted successfully' });
+                        setTimeout(() => setAlert({ show: false, type: 'success', message: '' }), 2000);
+                      }
+                    } catch (err) {
+                      setConfirmDialog({ ...confirmDialog, show: false });
+                      setAlert({ show: true, type: 'error', message: err.body?.error || err.message || 'Failed to delete' });
+                      setTimeout(() => setAlert({ show: false, type: 'error', message: '' }), 3000);
+                    }
+                  }}
+                  className="btn"
+                  style={{ background: '#ff6b6b', color: 'white', padding: '8px 24px' }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

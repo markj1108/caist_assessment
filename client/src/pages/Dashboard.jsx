@@ -3,6 +3,26 @@ import { api } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import TaskList from '../components/TaskList';
 
+// Stat Icons - Larger icons for right side positioning
+const ProjectsIcon = () => (
+  <svg style={{ width: 60, height: 60, opacity: 0.2 }} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+  </svg>
+);
+
+const CompletedIcon = () => (
+  <svg style={{ width: 60, height: 60, opacity: 0.2 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="20 6 9 17 4 12"></polyline>
+  </svg>
+);
+
+const OverdueIcon = () => (
+  <svg style={{ width: 60, height: 60, opacity: 0.2 }} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <circle cx="12" cy="12" r="10"></circle>
+    <polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" strokeWidth="2"></polyline>
+  </svg>
+);
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [projects, setProjects] = useState([]);
@@ -56,26 +76,47 @@ export default function Dashboard() {
       <h1>Dashboard</h1>
       {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <div className="card" style={{ textAlign: 'center', padding: 20 }}>
-          <div style={{ fontSize: '2.5rem', color: '#0b5fff', fontWeight: 'bold' }}>
-            {stats.totalProjects}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 500, marginBottom: 12 }}>Total Projects</div>
+              <div style={{ fontSize: '2.8rem', color: '#0b5fff', fontWeight: 'bold', lineHeight: 1 }}>
+                {stats.totalProjects}
+              </div>
+            </div>
+            <div style={{ color: '#0b5fff', flexShrink: 0 }}>
+              <ProjectsIcon />
+            </div>
           </div>
-          <div style={{ marginTop: 8, color: '#666' }}>Total Projects</div>
         </div>
 
-        <div className="card" style={{ textAlign: 'center', padding: 20 }}>
-          <div style={{ fontSize: '2.5rem', color: '#28a745', fontWeight: 'bold' }}>
-            {stats.completedProjects}
+        <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 500, marginBottom: 12 }}>Completed Projects</div>
+              <div style={{ fontSize: '2.8rem', color: '#28a745', fontWeight: 'bold', lineHeight: 1 }}>
+                {stats.completedProjects}
+              </div>
+            </div>
+            <div style={{ color: '#28a745', flexShrink: 0 }}>
+              <CompletedIcon />
+            </div>
           </div>
-          <div style={{ marginTop: 8, color: '#666' }}>Completed Projects</div>
         </div>
 
-        <div className="card" style={{ textAlign: 'center', padding: 20 }}>
-          <div style={{ fontSize: '2.5rem', color: '#ff6b6b', fontWeight: 'bold' }}>
-            {stats.overdueProjects}
+        <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 500, marginBottom: 12 }}>Overdue Projects</div>
+              <div style={{ fontSize: '2.8rem', color: '#ff6b6b', fontWeight: 'bold', lineHeight: 1 }}>
+                {stats.overdueProjects}
+              </div>
+            </div>
+            <div style={{ color: '#ff6b6b', flexShrink: 0 }}>
+              <OverdueIcon />
+            </div>
           </div>
-          <div style={{ marginTop: 8, color: '#666' }}>Overdue Projects</div>
         </div>
       </div>
 
@@ -88,23 +129,80 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div>
-        <h3>Current Projects ({projects.filter(p => p.status !== 'completed').length})</h3>
-        <div>
-          {projects.filter(p => p.status !== 'completed').map(p => (
-            <div key={p.id} className="list-item">
-              <div>
-                <div style={{ fontWeight: 600 }}>{p.name}</div>
-                <div className="small">{p.description || 'No description'}</div>
-                {p.due_date && (
-                  <div className="small" style={{ marginTop: 4, color: new Date(p.due_date) < new Date() && p.status !== 'completed' ? '#ff6b6b' : '#666' }}>
-                    Due: {new Date(p.due_date).toLocaleDateString()}
-                  </div>
-                )}
+      <div className="card">
+        <h3 style={{ marginTop: 0, marginBottom: 20 }}>Projects Overview</h3>
+        {projects.filter(p => p.status !== 'completed').length === 0 ? (
+          <div className="small" style={{ color: '#666' }}>No active projects.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {projects.filter(p => p.status !== 'completed').slice(0, 5).map(p => (
+              <div
+                key={p.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: 16,
+                  background: '#f8fafc',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = '#f0f4f8';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = '#f8fafc';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                {/* Project Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h4 style={{ margin: '0 0 4px 0', color: '#1e293b', fontSize: '1rem', fontWeight: 600 }}>
+                    {p.name}
+                  </h4>
+                  {p.description && (
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
+                      {p.description.length > 60
+                        ? p.description.substring(0, 60) + '...'
+                        : p.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Progress Section */}
+                <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, minWidth: 120 }}>
+                  {p.total_tasks > 0 ? (
+                    <>
+                      <div style={{ width: 100, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
+                        <div
+                          style={{
+                            height: '100%',
+                            width: `${p.progress}%`,
+                            background: '#0b5fff',
+                            transition: 'width 0.3s',
+                          }}
+                        />
+                      </div>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>
+                        {p.progress}%
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>No tasks</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+            {projects.filter(p => p.status !== 'completed').length > 5 && (
+              <div style={{ textAlign: 'center', padding: 12, color: '#64748b', fontSize: '0.9rem' }}>
+                +{projects.filter(p => p.status !== 'completed').length - 5} more projects
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

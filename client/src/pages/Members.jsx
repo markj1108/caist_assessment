@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/modal.css';
 
 const ROLE_OPTIONS = ['admin', 'team_leader', 'team_member'];
 
@@ -13,6 +14,9 @@ export default function Members() {
   const [editingId, setEditingId] = useState(null);
   const [newRole, setNewRole] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ show: false, userId: null, userName: '', action: '' });
 
   const isAdmin = user?.role_id === 1;
   const isLeader = user?.role_id === 2;
@@ -97,6 +101,7 @@ export default function Members() {
       setError('');
       await api.del(`/users/${userId}/team`);
       setUsers(prev => prev.filter(u => u.id !== userId));
+      setConfirmDialog({ show: false, userId: null, userName: '', action: '' });
     } catch (err) {
       setError(err.body?.error || err.message || 'Failed to remove member');
     }
@@ -120,7 +125,19 @@ export default function Members() {
         <h1>Members Management (Admin)</h1>
         {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
 
-        <div className="card">
+        <div className="card" style={{ marginBottom: 24 }}>
+          {/* Search Input */}
+          <div style={{ marginBottom: 20 }}>
+            <input
+              type="text"
+              placeholder="Search user by name or email"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="input"
+              style={{ width: '100%', background: '#f8fafc' }}
+            />
+          </div>
+
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #0b5fff' }}>
@@ -132,7 +149,12 @@ export default function Members() {
               </tr>
             </thead>
             <tbody>
-              {users.map(u => (
+              {users
+                .filter(u => 
+                  u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  u.email.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map(u => (
                 <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: 8 }}>{u.name}</td>
                   <td style={{ padding: 8 }}>{u.email}</td>
@@ -190,7 +212,7 @@ export default function Members() {
                         </button>
                         <button
                           className="btn"
-                          style={{ padding: '4px 8px', fontSize: '0.9rem', marginLeft: 4 }}
+                          style={{ padding: '4px 8px', fontSize: '0.9rem', marginLeft: 4, background: 'white', color: '#64748b', border: '1px solid #e2e8f0' }}
                           onClick={() => toggleActive(u.id, u.is_active)}
                         >
                           {u.is_active ? 'Disable' : 'Enable'}
@@ -210,68 +232,184 @@ export default function Members() {
   // TEAM LEADER VIEW
   return (
     <div>
-      <h1>My Team Members</h1>
-      {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
+      <h1>Members</h1>
+      {error && <div style={{ color: 'red', marginBottom: 12, padding: 12, background: '#ffe6e6', borderRadius: 4 }}>{error}</div>}
 
       <div className="card" style={{ marginBottom: 24 }}>
-        <h3>Add Member to Team</h3>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select
-            value={selectedUserId}
-            onChange={e => setSelectedUserId(e.target.value)}
+        {/* Search and Add Button */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Search Member"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
             className="input"
-            style={{ flex: 1 }}
+            style={{ flex: 1, background: '#f8fafc' }}
+          />
+          <button 
+            className="btn"
+            onClick={() => {
+              setShowAddMemberModal(true);
+              setSelectedUserId('');
+            }}
+            style={{
+              background: '#0b5fff',
+              color: 'white',
+              padding: '10px 20px',
+              borderRadius: 4,
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 500,
+              flexShrink: 0,
+            }}
           >
-            <option value="">Select a team member to add</option>
-            {availableUsers.map(u => (
-              <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
-            ))}
-          </select>
-          <button className="btn" onClick={addMemberToTeam}>
-            Add
+            Add Member
           </button>
         </div>
-      </div>
 
-      <div className="card">
-        <h3>Team Members ({users.length})</h3>
+        {/* Members Table */}
         {users.length === 0 ? (
-          <div className="small">No team members yet. Add members from the section above.</div>
+          <div className="small" style={{ color: '#666', textAlign: 'center', padding: 24 }}>
+            No team members yet. Add members from the button above.
+          </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #0b5fff' }}>
-                <th style={{ textAlign: 'left', padding: 8 }}>Name</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Email</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: 8 }}>{u.name}</td>
-                  <td style={{ padding: 8 }}>{u.email}</td>
-                  <td style={{ padding: 8 }}>
-                    <span style={{ color: u.is_active ? 'green' : 'red' }}>
-                      {u.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td style={{ padding: 8 }}>
-                    <button
-                      className="btn"
-                      style={{ padding: '4px 8px', fontSize: '0.9rem', background: '#ff6b6b' }}
-                      onClick={() => removeMemberFromTeam(u.id)}
-                    >
-                      Remove
-                    </button>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
+                  <th style={{ textAlign: 'left', padding: '12px 8px', fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Nome</th>
+                  <th style={{ textAlign: 'left', padding: '12px 8px', fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Email</th>
+                  <th style={{ textAlign: 'left', padding: '12px 8px', fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Role</th>
+                  <th style={{ textAlign: 'left', padding: '12px 8px', fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users
+                  .filter(u => 
+                    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map(u => (
+                    <tr key={u.id} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <td style={{ padding: '12px 8px', color: '#1e293b', fontWeight: 500 }}>{u.name}</td>
+                      <td style={{ padding: '12px 8px', color: '#64748b' }}>{u.email}</td>
+                      <td style={{ padding: '12px 8px', color: '#64748b' }}>Member</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <button
+                          onClick={() => setConfirmDialog({ show: true, userId: u.id, userName: u.name })}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#0b5fff',
+                            cursor: 'pointer',
+                            fontWeight: 500,
+                            fontSize: '0.9rem',
+                            padding: 0,
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {/* Add Member Modal */}
+      {showAddMemberModal && (
+        <div className="modal-overlay" onClick={() => setShowAddMemberModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
+            <div className="modal-header">
+              <h2>Add Member</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowAddMemberModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, color: '#1e293b' }}>Select a member to add</label>
+              <select
+                value={selectedUserId}
+                onChange={e => setSelectedUserId(e.target.value)}
+                className="input"
+                style={{ width: '100%', marginBottom: 20 }}
+              >
+                <option value="">-- Select Member --</option>
+                {availableUsers.map(u => (
+                  <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                ))}
+              </select>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button 
+                  className="btn"
+                  onClick={() => setShowAddMemberModal(false)}
+                  style={{ background: '#6c757d', color: 'white', padding: '8px 16px' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="btn"
+                  onClick={() => {
+                    if (selectedUserId) {
+                      addMemberToTeam();
+                      setShowAddMemberModal(false);
+                    }
+                  }}
+                  style={{ background: '#0b5fff', color: 'white', padding: '8px 16px' }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove/Delete Confirmation Modal */}
+      {confirmDialog.show && (
+        <div className="modal-overlay" onClick={() => setConfirmDialog({ show: false, userId: null, userName: '', action: '' })}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2>Remove Member</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setConfirmDialog({ show: false, userId: null, userName: '', action: '' })}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '1rem', color: '#64748b', marginBottom: 24 }}>
+                Are you sure you want to remove <strong>{confirmDialog.userName}</strong> from the team?
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button
+                  onClick={() => setConfirmDialog({ show: false, userId: null, userName: '', action: '' })}
+                  className="btn"
+                  style={{ background: '#6c757d', color: 'white', padding: '8px 24px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => removeMemberFromTeam(confirmDialog.userId)}
+                  className="btn"
+                  style={{ background: '#ff6b6b', color: 'white', padding: '8px 24px' }}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
