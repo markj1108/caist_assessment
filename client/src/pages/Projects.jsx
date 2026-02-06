@@ -18,12 +18,15 @@ export default function Projects() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showProjectDetail, setShowProjectDetail] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     start_date: '',
     due_date: '',
   });
+  const [alert, setAlert] = useState({ show: false, type: 'success', message: '' });
 
   const isLeader = user?.role_id === 2;
   const isAdmin = user?.role_id === 1;
@@ -36,7 +39,6 @@ export default function Projects() {
   async function loadProjects() {
     try {
       const data = await api.get('/projects');
-      console.log('Loaded projects:', data);
       setProjects(data || []);
     } catch (err) {
       console.error('Error loading projects:', err);
@@ -51,7 +53,7 @@ export default function Projects() {
     setError('');
 
     if (!formData.name.trim()) {
-      setError('Project name is required');
+      setAlert({ show: true, type: 'error', message: 'Project name is required' });
       return;
     }
 
@@ -71,8 +73,10 @@ export default function Projects() {
         due_date: '',
       });
       setShowForm(false);
+      setAlert({ show: true, type: 'success', message: 'Project created successfully' });
+      setTimeout(() => setAlert({ ...alert, show: false }), 2000);
     } catch (err) {
-      setError(err.body?.error || err.message || 'Failed to create project');
+      setAlert({ show: true, type: 'error', message: err.body?.error || err.message || 'Failed to create project' });
     }
   }
 
@@ -88,8 +92,41 @@ export default function Projects() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1>Projects</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 16 }}>
+        <div>
+          <h1 style={{ margin: '0 0 4px 0' }}>Projects</h1>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>Manage and track your projects</p>
+        </div>
+        {canAddProject && (
+          <button
+            className="btn"
+            onClick={() => setShowForm(!showForm)}
+            style={{
+              background: '#0b5fff',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(11, 95, 255, 0.2)',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(11, 95, 255, 0.3)';
+              e.currentTarget.style.background = '#0a4fd9';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(11, 95, 255, 0.2)';
+              e.currentTarget.style.background = '#0b5fff';
+            }}
+          >
+            + New Project
+          </button>
+        )}
       </div>
 
       {error && <div style={{ color: 'red', marginBottom: 12, padding: 12, background: '#ffe6e6', borderRadius: 4 }}>{error}</div>}
@@ -186,7 +223,7 @@ export default function Projects() {
             {/* Current Projects Section */}
             {projects.filter(p => p.status !== 'completed').length > 0 && (
               <div style={{ marginBottom: 32 }}>
-                <h3 style={{ marginBottom: 16 }}>Current Projects ({projects.filter(p => p.status !== 'completed').length})</h3>
+                <h3 style={{ marginBottom: 16, color: '#000000' }}>Current Projects ({projects.filter(p => p.status !== 'completed').length})</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                   {projects.filter(p => p.status !== 'completed').map((project, index) => (
                     <div
@@ -203,7 +240,10 @@ export default function Projects() {
                         flexDirection: 'column',
                         minHeight: 200,
                       }}
-                      onClick={() => navigate(`/projects/${project.id}`)}
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setShowProjectDetail(true);
+                      }}
                       onMouseEnter={e => {
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
                         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -243,9 +283,14 @@ export default function Projects() {
                       </div>
 
                       {/* Title */}
-                      <h4 style={{ margin: '0 0 8px 0', color: '#1e293b', fontSize: '1.1rem', fontWeight: 600 }}>
-                        {project.name}
-                      </h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                        <h4 style={{ margin: '0', color: '#1e293b', fontSize: '1.1rem', fontWeight: 600 }}>
+                          {project.name}
+                        </h4>
+                        <span style={{ display: 'inline-block', backgroundColor: '#0b5fff', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          In Progress
+                        </span>
+                      </div>
 
                       {/* Description */}
                       {project.description && (
@@ -291,7 +336,7 @@ export default function Projects() {
             {/* Completed Projects Section */}
             {projects.filter(p => p.status === 'completed').length > 0 && (
               <div style={{ paddingTop: 24, borderTop: '2px solid #e2e8f0' }}>
-                <h3 style={{ marginBottom: 16, color: '#64748b' }}>Completed Projects ({projects.filter(p => p.status === 'completed').length})</h3>
+                <h3 style={{ marginBottom: 16, color: '#000000' }}>Completed Projects ({projects.filter(p => p.status === 'completed').length})</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                   {projects.filter(p => p.status === 'completed').map((project, index) => (
                     <div
@@ -309,7 +354,10 @@ export default function Projects() {
                         minHeight: 200,
                         opacity: 0.8,
                       }}
-                      onClick={() => navigate(`/projects/${project.id}`)}
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setShowProjectDetail(true);
+                      }}
                       onMouseEnter={e => {
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
                         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -348,9 +396,14 @@ export default function Projects() {
                       </div>
 
                       {/* Title */}
-                      <h4 style={{ margin: '0 0 8px 0', color: '#64748b', fontSize: '1.1rem', fontWeight: 600 }}>
-                        {project.name} <span style={{ fontSize: '1rem' }}>✓</span>
-                      </h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <h4 style={{ margin: '0', color: '#64748b', fontSize: '1.1rem', fontWeight: 600 }}>
+                          {project.name}
+                        </h4>
+                        <span style={{ display: 'inline-block', backgroundColor: '#28a745', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          Completed
+                        </span>
+                      </div>
 
                       {/* Description */}
                       {project.description && (
@@ -378,37 +431,113 @@ export default function Projects() {
         )}
       </div>
 
-      {canAddProject && (
-        <button
-          className="btn"
-          onClick={() => setShowForm(!showForm)}
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            background: '#0b5fff',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '50px',
-            border: 'none',
-            fontSize: '1rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(11, 95, 255, 0.3)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(11, 95, 255, 0.4)';
-            e.currentTarget.style.transform = 'scale(1.05)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(11, 95, 255, 0.3)';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-        >
-          + New Project
-        </button>
+      {/* Project Detail Modal */}
+      {showProjectDetail && selectedProject && (
+        <div className="modal-overlay" onClick={() => setShowProjectDetail(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h2>{selectedProject.name}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowProjectDetail(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              {selectedProject.description && (
+                <div style={{ marginBottom: 20 }}>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Description</h3>
+                  <p style={{ margin: 0, color: '#64748b', lineHeight: 1.5 }}>{selectedProject.description}</p>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                {selectedProject.start_date && (
+                  <div>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Start Date</h3>
+                    <p style={{ margin: 0, color: '#1e293b' }}>{new Date(selectedProject.start_date).toLocaleDateString()}</p>
+                  </div>
+                )}
+                {selectedProject.due_date && (
+                  <div>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Due Date</h3>
+                    <p style={{ margin: 0, color: '#1e293b' }}>{new Date(selectedProject.due_date).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedProject.total_tasks > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Progress</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: 8, color: '#64748b' }}>
+                    <span>{selectedProject.completed_tasks || 0} / {selectedProject.total_tasks} tasks</span>
+                    <span>{selectedProject.progress}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${selectedProject.progress}%`,
+                      background: getColorForProject(projects.indexOf(selectedProject)),
+                      transition: 'width 0.3s'
+                    }} />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
+                <button
+                  className="btn"
+                  onClick={() => setShowProjectDetail(false)}
+                  style={{ background: '#6c757d', color: 'white', padding: '8px 16px', borderRadius: 4, border: 'none', cursor: 'pointer' }}
+                >
+                  Close
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setShowProjectDetail(false);
+                    navigate(`/projects/${selectedProject.id}`);
+                  }}
+                  style={{ background: '#0b5fff', color: 'white', padding: '8px 16px', borderRadius: 4, border: 'none', cursor: 'pointer' }}
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
+
+      {alert.show && (
+        <div className="modal-overlay" onClick={() => setAlert({ ...alert, show: false })}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2>{alert.type === 'success' ? '✓ Success' : '⚠ Error'}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setAlert({ ...alert, show: false })}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '1rem', color: alert.type === 'success' ? '#28a745' : '#c41e3a', marginBottom: 20 }}>
+                {alert.message}
+              </p>
+              <button
+                onClick={() => setAlert({ ...alert, show: false })}
+                className="btn"
+                style={{ background: alert.type === 'success' ? '#28a745' : '#c41e3a', color: 'white', padding: '8px 24px' }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

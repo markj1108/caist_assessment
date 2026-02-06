@@ -5,19 +5,19 @@ import TaskList from '../components/TaskList';
 
 // Stat Icons - Larger icons for right side positioning
 const ProjectsIcon = () => (
-  <svg style={{ width: 60, height: 60, opacity: 0.2 }} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+  <svg style={{ width: 60, height: 60, opacity: 1 }} viewBox="0 0 24 24" fill="currentColor" stroke="none">
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
   </svg>
 );
 
 const CompletedIcon = () => (
-  <svg style={{ width: 60, height: 60, opacity: 0.2 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg style={{ width: 60, height: 60, opacity: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polyline points="20 6 9 17 4 12"></polyline>
   </svg>
 );
 
 const OverdueIcon = () => (
-  <svg style={{ width: 60, height: 60, opacity: 0.2 }} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+  <svg style={{ width: 60, height: 60, opacity: 1 }} viewBox="0 0 24 24" fill="currentColor" stroke="none">
     <circle cx="12" cy="12" r="10"></circle>
     <polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" strokeWidth="2"></polyline>
   </svg>
@@ -80,8 +80,8 @@ export default function Dashboard() {
         <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 500, marginBottom: 12 }}>Total Projects</div>
-              <div style={{ fontSize: '2.8rem', color: '#0b5fff', fontWeight: 'bold', lineHeight: 1 }}>
+              <div style={{ color: '#64748b', fontSize: '1.5rem', fontWeight: 500, marginBottom: 12 }}>Total Projects</div>
+              <div style={{ fontSize: '2.8rem', color: '#000000', fontWeight: 'bold', lineHeight: 1 }}>
                 {stats.totalProjects}
               </div>
             </div>
@@ -94,8 +94,8 @@ export default function Dashboard() {
         <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 500, marginBottom: 12 }}>Completed Projects</div>
-              <div style={{ fontSize: '2.8rem', color: '#28a745', fontWeight: 'bold', lineHeight: 1 }}>
+              <div style={{ color: '#64748b', fontSize: '1.5rem', fontWeight: 500, marginBottom: 12 }}>Completed Projects</div>
+              <div style={{ fontSize: '2.8rem', color: '#000000', fontWeight: 'bold', lineHeight: 1 }}>
                 {stats.completedProjects}
               </div>
             </div>
@@ -108,12 +108,12 @@ export default function Dashboard() {
         <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 500, marginBottom: 12 }}>Overdue Projects</div>
-              <div style={{ fontSize: '2.8rem', color: '#ff6b6b', fontWeight: 'bold', lineHeight: 1 }}>
+              <div style={{ color: '#64748b', fontSize: '1.5rem', fontWeight: 500, marginBottom: 12 }}>Overdue Projects</div>
+              <div style={{ fontSize: '2.8rem', color: '#000000', fontWeight: 'bold', lineHeight: 1 }}>
                 {stats.overdueProjects}
               </div>
             </div>
-            <div style={{ color: '#ff6b6b', flexShrink: 0 }}>
+            <div style={{ color: '#ff0000', flexShrink: 0 }}>
               <OverdueIcon />
             </div>
           </div>

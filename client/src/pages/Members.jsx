@@ -43,7 +43,6 @@ export default function Members() {
 
         try {
           const available = await api.get('/users/available');
-          console.log('Available users:', available);
           setAvailableUsers(available || []);
         } catch (e) {
           console.error('Failed to load available users:', e);

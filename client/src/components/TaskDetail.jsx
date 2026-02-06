@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom';
 
 // Map of status name -> id (update if your DB uses different ids)
 const STATUS_OPTIONS = [
-  { id: 1, name: 'todo' },
-  { id: 2, name: 'in_progress' },
-  { id: 3, name: 'review' },
-  { id: 4, name: 'blocked' },
-  { id: 5, name: 'done' },
+  { id: 1, name: 'To Do' },
+  { id: 2, name: 'In Progress' },
+  { id: 3, name: 'Review' },
+  { id: 4, name: 'Blocked' },
+  { id: 5, name: 'Done' },
 ];
 
 export default function TaskDetail() {
@@ -72,29 +72,36 @@ export default function TaskDetail() {
 
   return (
     <div>
-      <button className="btn" onClick={() => nav(-1)}>Back</button>
+      <button className="btn" onClick={() => nav(-1)}             style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#000000',
+              fontSize: '2rem',
+              marginBottom: 8,
+            }}>←</button>
       <div className="card" style={{ marginTop:12 }}>
         <h2>{task ? task.title : `Task #${taskId}`}</h2>
-        <div className="small">Project: {task?.project_name || task?.project_id || '—'}</div>
-        <div style={{ marginTop:8 }}>{task?.description}</div>
+        <div className="small" style={{ fontSize: '1.5rem', color: '#000000'}}>Project: {task?.project_name || task?.project_id || '—'}</div>
+        <div style={{ marginTop:8, fontSize: '1.2rem', color: '#000000' }}>Description: {task?.description}</div>
 
         <hr />
 
-        <h4>Status</h4>
-        <div className="small">Current: {task?.status_name || (statusLogs[statusLogs.length-1]?.new_status_id)}</div>
+        <h4 style={{ marginTop: 12}}>Status</h4>
+        <div className="small" style={{ marginTop: 8, fontSize: '1rem', color: '#000000'}}>Current: {task?.status_name || (statusLogs[statusLogs.length-1]?.new_status_id)}</div>
         <div style={{ display:'flex', gap:8, marginTop:8, alignItems:'center' }}>
           <select className="input" value={newStatus} onChange={e=>setNewStatus(e.target.value)} style={{ width:220 }}>
             <option value="">Select new status</option>
             {STATUS_OPTIONS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
           <input className="input" value={note} onChange={e=>setNote(e.target.value)} placeholder="optional note" />
-          <button className="btn" onClick={changeStatus}>Change</button>
+          <button className="btn" onClick={changeStatus} style={{backgroundColor: "#0b5fff", color: "white"}}>Change</button>
         </div>
         {error && <div style={{ color:'red', marginTop:8 }}>{error}</div>}
 
         <hr />
 
-        <h4>Comments</h4>
+        <h4 style={{ marginTop: 12}}>Comments</h4>
         <div>
           {comments.map(c => (
             <div key={c.id} style={{ padding:8, borderBottom:'1px solid #eee' }}>
@@ -107,7 +114,7 @@ export default function TaskDetail() {
         <div style={{ marginTop:8 }}>
           <textarea className="input" rows={3} value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Add a comment" />
           <div style={{ textAlign:'right', marginTop:8 }}>
-            <button className="btn" onClick={addComment}>Post comment</button>
+            <button className="btn" onClick={addComment} style={{backgroundColor: "#0b5fff", color: "white"}}>Post comment</button>
           </div>
         </div>
 

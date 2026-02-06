@@ -14,12 +14,15 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showTaskEdit, setShowTaskEdit] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [taskEditData, setTaskEditData] = useState({});
   const [alert, setAlert] = useState({ show: false, type: 'success', message: '' });
   const [confirmDialog, setConfirmDialog] = useState({ show: false, type: '', action: null, title: '', message: '' });
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    assignees: [],
+    assignee_id: null,
     priority: 'medium',
   });
 
@@ -33,18 +36,14 @@ export default function ProjectDetail() {
 
   async function loadProjectData() {
     try {
-      console.log('Loading project ID:', projectId);
       const projectData = await api.get(`/projects/${projectId}`);
-      console.log('Project data returned:', projectData);
       setProject(projectData);
       
       // Load tasks for this project - correct path
       try {
         const tasksData = await api.get(`/tasks/projects/${projectId}/tasks`);
-        console.log('Tasks data returned:', tasksData);
         setTasks(tasksData || []);
       } catch (taskErr) {
-        console.warn('Could not load tasks:', taskErr);
         setTasks([]);
       }
 
@@ -53,15 +52,11 @@ export default function ProjectDetail() {
         const membersData = isLeader
           ? await api.get('/users/team/members')
           : await api.get('/users');
-        console.log('Members data returned:', membersData);
         setTeamMembers(membersData || []);
       } catch (memberErr) {
-        console.warn('Could not load members:', memberErr);
         setTeamMembers([]);
       }
     } catch (err) {
-      console.error('Error loading project data:', err);
-      console.error('Error details:', err.response || err.message);
       setError(err.body?.error || err.message || 'Failed to load project');
     } finally {
       setLoading(false);
@@ -76,58 +71,81 @@ export default function ProjectDetail() {
     }));
   }
 
-  function handleMemberToggle(memberId) {
-    setFormData(prev => ({
+  function openTaskEdit(task) {
+    setSelectedTask(task);
+    setTaskEditData({
+      title: task.title,
+      description: task.description || '',
+      assignee_id: task.assignee_id,
+      status_id: task.status_id,
+      priority: task.priority,
+    });
+    setShowTaskEdit(true);
+  }
+
+  function handleTaskEditChange(e) {
+    const { name, value } = e.target;
+    setTaskEditData(prev => ({
       ...prev,
-      assignees: prev.assignees.includes(memberId)
-        ? prev.assignees.filter(id => id !== memberId)
-        : [...prev.assignees, memberId],
+      [name]: value,
     }));
   }
+
+
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
     if (!formData.title.trim()) {
-      setError('Task title is required');
+      setAlert({ show: true, type: 'error', message: 'Task title is required' });
       return;
     }
 
     try {
-      // Create task for each selected assignee, or unassigned if none selected
-      if (formData.assignees.length === 0) {
-        const newTask = await api.post(`/tasks/projects/${projectId}/tasks`, {
-          title: formData.title,
-          description: formData.description || null,
-          priority: formData.priority,
-          assignee_id: null,
-        });
-        setTasks([newTask, ...tasks]);
-      } else {
-        // Create task for each assignee
-        const newTasks = await Promise.all(
-          formData.assignees.map(assigneeId =>
-            api.post(`/tasks/projects/${projectId}/tasks`, {
-              title: formData.title,
-              description: formData.description || null,
-              priority: formData.priority,
-              assignee_id: assigneeId,
-            })
-          )
-        );
-        setTasks([...newTasks, ...tasks]);
-      }
+      const newTask = await api.post(`/tasks/projects/${projectId}/tasks`, {
+        title: formData.title,
+        description: formData.description || null,
+        priority: formData.priority,
+        assignee_id: formData.assignee_id ? parseInt(formData.assignee_id, 10) : null,
+      });
+      setTasks([newTask, ...tasks]);
 
       setFormData({
         title: '',
         description: '',
-        assignees: [],
+        assignee_id: null,
         priority: 'medium',
       });
       setShowForm(false);
+      setAlert({ show: true, type: 'success', message: 'Task created successfully' });
+      setTimeout(() => setAlert({ show: false, type: 'success', message: '' }), 2000);
     } catch (err) {
-      setError(err.body?.error || err.message || 'Failed to create task');
+      setAlert({ show: true, type: 'error', message: err.body?.error || err.message || 'Failed to create task' });
+    }
+  }
+
+  async function updateTask() {
+    if (!selectedTask) return;
+
+    if (!taskEditData.title.trim()) {
+      setAlert({ show: true, type: 'error', message: 'Task title is required' });
+      return;
+    }
+    
+    try {
+      const updatedTask = await api.put(`/tasks/${selectedTask.id}`, {
+        title: taskEditData.title,
+        description: taskEditData.description || null,
+        assignee_id: taskEditData.assignee_id ? parseInt(taskEditData.assignee_id, 10) : null,
+        priority: taskEditData.priority,
+      });
+      setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+      setShowTaskEdit(false);
+      setAlert({ show: true, type: 'success', message: 'Task updated successfully' });
+      setTimeout(() => setAlert({ show: false, type: 'success', message: '' }), 2000);
+    } catch (err) {
+      setAlert({ show: true, type: 'error', message: err.body?.error || err.message || 'Failed to update task' });
     }
   }
 
@@ -159,12 +177,12 @@ export default function ProjectDetail() {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: '#0b5fff',
-              fontSize: '1rem',
+              color: '#000000',
+              fontSize: '2rem',
               marginBottom: 8,
             }}
           >
-            ← Back to Projects
+            ← 
           </button>
           <h1 style={{ marginTop: 0 }}>{project.name}</h1>
         </div>
@@ -207,9 +225,9 @@ export default function ProjectDetail() {
 
       {project.description && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <h3 style={{ marginTop: 0 }}>Description</h3>
-          <p>{project.description}</p>
-          <div style={{ display: 'flex', gap: 16, fontSize: '0.9rem', color: '#888' }}>
+          <h2 style={{ marginTop: 0 }}>Description</h2>
+          <h3>{project.description}</h3>
+          <div style={{ display: 'flex', gap: 50, fontSize: '0.9rem', color: '#000000' }}>
             {project.start_date && (
               <span>Start: {new Date(project.start_date).toLocaleDateString()}</span>
             )}
@@ -223,7 +241,7 @@ export default function ProjectDetail() {
       {/* Progress Section */}
       {project.total_tasks > 0 && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <h3 style={{ marginTop: 0 }}>Progress</h3>
+          <h2 style={{ marginTop: 0 }}>Progress</h2>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', marginBottom: 12 }}>
             <span><strong>{project.completed_tasks}</strong> of <strong>{project.total_tasks}</strong> tasks completed</span>
             <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#28a745' }}>{project.progress}%</span>
@@ -324,37 +342,20 @@ export default function ProjectDetail() {
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                Assign to Members (select multiple)
-              </label>
-              <div style={{ border: '1px solid #ddd', borderRadius: 4, padding: 12, maxHeight: 200, overflowY: 'auto' }}>
-                {teamMembers.length === 0 ? (
-                  <div className="small">No team members available</div>
-                ) : (
-                  teamMembers.map(member => (
-                    <div key={member.id} style={{ marginBottom: 8, display: 'flex', alignItems: 'center' }}>
-                      <input
-                        type="checkbox"
-                        id={`member-${member.id}`}
-                        checked={formData.assignees.includes(member.id)}
-                        onChange={() => handleMemberToggle(member.id)}
-                        style={{ marginRight: 8, cursor: 'pointer' }}
-                      />
-                      <label
-                        htmlFor={`member-${member.id}`}
-                        style={{ cursor: 'pointer', flex: 1 }}
-                      >
-                        {member.name} ({member.email})
-                      </label>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="small" style={{ marginTop: 4, color: '#666' }}>
-                {formData.assignees.length === 0
-                  ? 'No members selected (task will be unassigned)'
-                  : `${formData.assignees.length} member(s) selected`}
-              </div>
+              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Assign to Member</label>
+              <select
+                name="assignee_id"
+                value={formData.assignee_id || ''}
+                onChange={handleInputChange}
+                className="input"
+              >
+                <option value="">Unassigned</option>
+                {teamMembers.map(member => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} ({member.email})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div style={{ textAlign: 'right', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
@@ -406,27 +407,37 @@ export default function ProjectDetail() {
                     >
                       {task.priority}
                     </span>
-                    <span className="small">Status: {task.status_name || 'todo'}</span>
+                    <span className="small">Status: {task.status_name || 'To Do'}</span>
                     {task.assignee_name && (
                       <span className="small">Assigned: {task.assignee_name}</span>
                     )}
                   </div>
                 </div>
-                {canAddTask && project.status !== 'completed' && (
-                  <button
-                    onClick={() => {
-                      setConfirmDialog({
-                        show: true,
-                        type: 'delete',
-                        action: 'deleteTask',
-                        title: 'Delete Task',
-                        message: 'Are you sure you want to delete this task?',
-                        taskId: task.id
-                      });
-                    }}
-                    style={{
-                      background: '#ff6b6b',
-                      color: 'white',
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {canAddTask && project.status !== 'completed' && (
+                    <button
+                      onClick={() => openTaskEdit(task)}
+                      className="btn"
+                      style={{ background: '#0b5fff', color: 'white', padding: '4px 8px', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '0.85rem' }}
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {canAddTask && project.status !== 'completed' && (
+                    <button
+                      onClick={() => {
+                        setConfirmDialog({
+                          show: true,
+                          type: 'delete',
+                          action: 'deleteTask',
+                          title: 'Delete Task',
+                          message: 'Are you sure you want to delete this task?',
+                          taskId: task.id
+                        });
+                      }}
+                      style={{
+                        background: '#ff6b6b',
+                        color: 'white',
                       border: 'none',
                       borderRadius: 4,
                       padding: '4px 8px',
@@ -439,12 +450,122 @@ export default function ProjectDetail() {
                     Delete
                   </button>
                 )}
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+      {/* Task View/Edit Modal */}
+      {showTaskEdit && selectedTask && (
+        <div className="modal-overlay" onClick={() => setShowTaskEdit(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{canAddTask ? 'Edit Task' : 'View Task'}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowTaskEdit(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); if (canAddTask) updateTask(); }}>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Task Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={taskEditData.title || ''}
+                  onChange={handleTaskEditChange}
+                  disabled={!canAddTask}
+                  className="input"
+                  style={{ backgroundColor: !canAddTask ? '#f5f5f5' : 'white', cursor: !canAddTask ? 'not-allowed' : 'text' }}
+                />
+              </div>
 
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Description</label>
+                <textarea
+                  name="description"
+                  value={taskEditData.description || ''}
+                  onChange={handleTaskEditChange}
+                  disabled={!canAddTask}
+                  className="input"
+                  rows="4"
+                  style={{ resize: 'vertical', backgroundColor: !canAddTask ? '#f5f5f5' : 'white', cursor: !canAddTask ? 'not-allowed' : 'text' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Priority</label>
+                  <select
+                    name="priority"
+                    value={taskEditData.priority || 'medium'}
+                    onChange={handleTaskEditChange}
+                    disabled={!canAddTask}
+                    className="input"
+                    style={{ backgroundColor: !canAddTask ? '#f5f5f5' : 'white', cursor: !canAddTask ? 'not-allowed' : 'pointer' }}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Assign To</label>
+                  <select
+                    name="assignee_id"
+                    value={taskEditData.assignee_id || ''}
+                    onChange={handleTaskEditChange}
+                    disabled={!canAddTask}
+                    className="input"
+                    style={{ backgroundColor: !canAddTask ? '#f5f5f5' : 'white', cursor: !canAddTask ? 'not-allowed' : 'pointer' }}
+                  >
+                    <option value="">Unassigned</option>
+                    {teamMembers.map(member => (
+                      <option key={member.id} value={member.id}>
+                        {member.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                {canAddTask ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => setShowTaskEdit(false)}
+                      style={{ background: '#6c757d', color: 'white', padding: '8px 16px' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn"
+                      style={{ background: '#0b5fff', color: 'white', padding: '8px 16px' }}
+                    >
+                      Save Changes
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setShowTaskEdit(false)}
+                    style={{ background: '#0b5fff', color: 'white', padding: '8px 16px' }}
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {alert.show && (
         <div className="modal-overlay" onClick={() => setAlert({ ...alert, show: false })}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>

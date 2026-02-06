@@ -37,17 +37,17 @@ export default function Tasks() {
             {tasks.filter(t => t.status_name !== 'done').map(task => (
               <div key={task.id} className="list-item">
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{task.title}</div>
+                  <div style={{ fontWeight: 600, fontSize: '1.8rem' }}>{task.title}</div>
                   <div style={{ fontSize: '0.95rem', marginTop: 6, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ color: '#0b5fff', fontWeight: 500 }}>Project: {task.project_name || task.project_id}</span>
-                    <span style={{ color: '#666', fontWeight: 500 }}>
+                    <span style={{ color: '#0b5fff', fontWeight: 500, fontSize: '1.2rem' }}>Project: {task.project_name || task.project_id}</span>
+                    <span style={{ color: '#666', fontWeight: 500, fontSize: '1.2rem' }}>
                       Status: <strong style={{ color: task.status_name === 'done' ? '#28a745' : task.status_name === 'in_progress' ? '#0b5fff' : '#666' }}>
                         {task.status_name}
                       </strong>
                     </span>
                   </div>
                   {task.description && (
-                    <div className="small" style={{ marginTop: 8, color: '#666' }}>
+                    <div className="small" style={{ marginTop: 24, fontSize: '1rem', color: '#000000' }}>
                       {task.description}
                     </div>
                   )}
@@ -70,7 +70,7 @@ export default function Tasks() {
                   >
                     {task.priority}
                   </span>
-                  <Link to={`/tasks/${task.id}`} className="btn">
+                  <Link to={`/tasks/${task.id}`} className="btn" style={{ backgroundColor: '#0b5fff', color: 'white'}}>
                     View
                   </Link>
                 </div>

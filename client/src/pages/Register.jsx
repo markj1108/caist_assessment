@@ -87,7 +87,14 @@ export default function Register() {
             />
           </div>
           <div style={{ textAlign: 'center', marginTop: 20 }}>
-            <button className="login-btn" type="submit">Sign up</button>
+            <button 
+              className="login-btn" 
+              type="submit"
+              disabled={!name || !email || !password || !confirmPassword}
+              style={{ opacity: (!name || !email || !password || !confirmPassword) ? 0.5 : 1, cursor: (!name || !email || !password || !confirmPassword) ? 'not-allowed' : 'pointer' }}
+            >
+              Sign up
+            </button>
           </div>
         </form>
         <div style={{ marginTop: 16, textAlign: 'center' }}>
