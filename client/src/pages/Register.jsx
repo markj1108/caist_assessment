@@ -20,6 +20,13 @@ export default function Register() {
       return;
     }
 
+    // Validate name: letters and spaces only (no numbers or special characters)
+    const validName = /^[A-Za-z\s]+$/;
+    if (!validName.test(name.trim())) {
+      setError('Name may only contain letters and spaces');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -38,68 +45,49 @@ export default function Register() {
     }
   }
 
+  const allFilled = name && email && password && confirmPassword;
+
   return (
     <div className="login-container">
       <div className="login-card">
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: '2rem' }}>☰ TaskEr</h2>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 12, background: 'var(--primary)', marginBottom: 16 }}>
+            <span style={{ color: 'white', fontWeight: 800, fontSize: '1.3rem' }}>≡</span>
+          </div>
+          <h2 style={{ marginTop: 0, marginBottom: 4, fontSize: '1.5rem' }}>Get started</h2>
         </div>
-        <h3 style={{ textAlign: 'center', marginBottom: 24 }}>Create your account</h3>
-        {error && <div style={{ color: 'red', marginBottom: 12, textAlign: 'center' }}>{error}</div>}
+        <h3>Create your account</h3>
+        {error && (
+          <div style={{ background: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: '0.9rem', border: '1px solid #fecaca', textAlign: 'center' }}>
+            {error}
+          </div>
+        )}
         <form onSubmit={onSubmit}>
           <div className="login-form-row">
-            <input
-              className="login-input"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="full name"
-              required
-            />
+            <label>Full Name</label>
+            <input className="login-input" value={name} onChange={e => setName(e.target.value)} placeholder="John Doe" required />
           </div>
           <div className="login-form-row">
-            <input
-              className="login-input"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="email"
-              required
-            />
+            <label>Email</label>
+            <input className="login-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required />
           </div>
-          <div className="login-form-row">
-            <input
-              className="login-input"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="password"
-              required
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="login-form-row">
+              <label>Password</label>
+              <input className="login-input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••" required />
+            </div>
+            <div className="login-form-row">
+              <label>Confirm</label>
+              <input className="login-input" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••" required />
+            </div>
           </div>
-          <div className="login-form-row">
-            <input
-              className="login-input"
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="confirm password"
-              required
-            />
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 20 }}>
-            <button 
-              className="login-btn" 
-              type="submit"
-              disabled={!name || !email || !password || !confirmPassword}
-              style={{ opacity: (!name || !email || !password || !confirmPassword) ? 0.5 : 1, cursor: (!name || !email || !password || !confirmPassword) ? 'not-allowed' : 'pointer' }}
-            >
-              Sign up
-            </button>
-          </div>
+          <button className="login-btn" type="submit" disabled={!allFilled}
+            style={{ opacity: !allFilled ? 0.5 : 1, cursor: !allFilled ? 'not-allowed' : 'pointer', marginTop: 8 }}
+          >Create account</button>
         </form>
-        <div style={{ marginTop: 16, textAlign: 'center' }}>
-          <span style={{ color: '#666', fontSize: '0.95rem' }}>Already have an account? </span>
-          <Link to="/" style={{ color: '#0b5fff', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
+        <div style={{ marginTop: 20, textAlign: 'center' }}>
+          <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Already have an account? </span>
+          <Link to="/" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.9rem' }}>Sign in</Link>
         </div>
       </div>
     </div>

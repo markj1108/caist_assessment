@@ -121,15 +121,17 @@ export default function Members() {
   if (isAdmin) {
     return (
       <div>
-        <h1>Members Management (Admin)</h1>
-        {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ margin: '0 0 4px 0' }}>Users Management</h1>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>Manage users and roles</p>
+        </div>
+        {error && <div className="alert alert-danger" style={{ marginBottom: 12 }}>{error}</div>}
 
-        <div className="card" style={{ marginBottom: 24 }}>
-          {/* Search Input */}
-          <div style={{ marginBottom: 20 }}>
+        <div className="card">
+          <div style={{ marginBottom: 16 }}>
             <input
               type="text"
-              placeholder="Search user by name or email"
+              placeholder="Search by name or email..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="input"
@@ -137,92 +139,64 @@ export default function Members() {
             />
           </div>
 
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #0b5fff' }}>
-                <th style={{ textAlign: 'left', padding: 8 }}>Name</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Email</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Role</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users
-                .filter(u => 
-                  u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  u.email.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-                .map(u => (
-                <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: 8 }}>{u.name}</td>
-                  <td style={{ padding: 8 }}>{u.email}</td>
-                  <td style={{ padding: 8 }}>
-                    {editingId === u.id ? (
-                      <select
-                        value={newRole}
-                        onChange={e => setNewRole(e.target.value)}
-                        className="input"
-                        style={{ width: 150 }}
-                      >
-                        <option value="">Select role</option>
-                        {ROLE_OPTIONS.map(role => (
-                          <option key={role} value={role}>{role}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span>{u.role_name}</span>
-                    )}
-                  </td>
-                  <td style={{ padding: 8 }}>
-                    <span style={{ color: u.is_active ? 'green' : 'red' }}>
-                      {u.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td style={{ padding: 8 }}>
-                    {editingId === u.id ? (
-                      <>
-                        <button
-                          className="btn"
-                          style={{ padding: '4px 8px', fontSize: '0.9rem' }}
-                          onClick={() => changeRole(u.id, newRole)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="btn"
-                          style={{ padding: '4px 8px', fontSize: '0.9rem', marginLeft: 4 }}
-                          onClick={() => setEditingId(null)}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          className="btn"
-                          style={{ padding: '4px 8px', fontSize: '0.9rem' }}
-                          onClick={() => {
-                            setEditingId(u.id);
-                            setNewRole(u.role_name);
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn"
-                          style={{ padding: '4px 8px', fontSize: '0.9rem', marginLeft: 4, background: 'white', color: '#64748b', border: '1px solid #e2e8f0' }}
-                          onClick={() => toggleActive(u.id, u.is_active)}
-                        >
-                          {u.is_active ? 'Disable' : 'Enable'}
-                        </button>
-                      </>
-                    )}
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '12px 12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Name</th>
+                  <th style={{ textAlign: 'left', padding: '12px 12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Email</th>
+                  <th style={{ textAlign: 'left', padding: '12px 12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Role</th>
+                  <th style={{ textAlign: 'left', padding: '12px 12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: '12px 12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users
+                  .filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map(u => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td style={{ padding: '12px', fontWeight: 500, color: '#0f172a' }}>{u.name}</td>
+                    <td style={{ padding: '12px', color: '#64748b' }}>{u.email}</td>
+                    <td style={{ padding: '12px' }}>
+                      {editingId === u.id ? (
+                        <select value={newRole} onChange={e => setNewRole(e.target.value)} className="input" style={{ width: 150, padding: '6px 10px' }}>
+                          <option value="">Select role</option>
+                          {ROLE_OPTIONS.map(role => (
+                            <option key={role} value={role}>{role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="badge" style={{ background: 'var(--primary-bg)', color: 'var(--primary)' }}>{u.role_name?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <span className="badge" style={{ background: u.is_active ? '#ecfdf5' : '#fef2f2', color: u.is_active ? '#059669' : '#dc2626' }}>
+                        {u.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      {editingId === u.id ? (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-sm" onClick={() => changeRole(u.id, newRole)}>Save</button>
+                          <button className="btn btn-sm" style={{ background: '#6b7280' }} onClick={() => setEditingId(null)}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-sm" onClick={() => { setEditingId(u.id); setNewRole(u.role_name); }}>Edit</button>
+                          <button className="btn btn-sm" style={{ background: 'white', color: '#64748b', border: '1px solid #e2e8f0' }}
+                            onClick={() => toggleActive(u.id, u.is_active)}
+                          >{u.is_active ? 'Disable' : 'Enable'}</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -231,86 +205,58 @@ export default function Members() {
   // TEAM LEADER VIEW
   return (
     <div>
-      <h1>Members</h1>
-      {error && <div style={{ color: 'red', marginBottom: 12, padding: 12, background: '#ffe6e6', borderRadius: 4 }}>{error}</div>}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ margin: '0 0 4px 0' }}>Team Members</h1>
+        <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>Manage your team</p>
+      </div>
+      {error && <div className="alert alert-danger" style={{ marginBottom: 12 }}>{error}</div>}
 
       <div className="card" style={{ marginBottom: 24 }}>
-        {/* Search and Add Button */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
           <input
             type="text"
-            placeholder="Search Member"
+            placeholder="Search members..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="input"
             style={{ flex: 1, background: '#f8fafc' }}
           />
-          <button 
-            className="btn"
-            onClick={() => {
-              setShowAddMemberModal(true);
-              setSelectedUserId('');
-            }}
-            style={{
-              background: '#0b5fff',
-              color: 'white',
-              padding: '10px 20px',
-              borderRadius: 4,
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 500,
-              flexShrink: 0,
-            }}
-          >
-            Add Member
-          </button>
+          <button className="btn" onClick={() => { setShowAddMemberModal(true); setSelectedUserId(''); }}
+            style={{ flexShrink: 0 }}
+          >+ Add Member</button>
         </div>
 
-        {/* Members Table */}
         {users.length === 0 ? (
-          <div className="small" style={{ color: '#666', textAlign: 'center', padding: 24 }}>
+          <div style={{ color: '#94a3b8', textAlign: 'center', padding: 32 }}>
             No team members yet. Add members from the button above.
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
-                  <th style={{ textAlign: 'left', padding: '12px 8px', fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Nome</th>
-                  <th style={{ textAlign: 'left', padding: '12px 8px', fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Email</th>
-                  <th style={{ textAlign: 'left', padding: '12px 8px', fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Role</th>
-                  <th style={{ textAlign: 'left', padding: '12px 8px', fontWeight: 600, color: '#64748b', fontSize: '0.9rem' }}>Actions</th>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Name</th>
+                  <th style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Email</th>
+                  <th style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Role</th>
+                  <th style={{ textAlign: 'left', padding: '12px', fontWeight: 600, color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users
-                  .filter(u => 
-                    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    u.email.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
+                  .filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map(u => (
-                    <tr key={u.id} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background 0.2s' }}
+                    <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                      <td style={{ padding: '12px 8px', color: '#1e293b', fontWeight: 500 }}>{u.name}</td>
-                      <td style={{ padding: '12px 8px', color: '#64748b' }}>{u.email}</td>
-                      <td style={{ padding: '12px 8px', color: '#64748b' }}>Member</td>
-                      <td style={{ padding: '12px 8px' }}>
+                      <td style={{ padding: '12px', color: '#0f172a', fontWeight: 500 }}>{u.name}</td>
+                      <td style={{ padding: '12px', color: '#64748b' }}>{u.email}</td>
+                      <td style={{ padding: '12px' }}><span className="badge" style={{ background: '#f0fdf4', color: '#059669' }}>Member</span></td>
+                      <td style={{ padding: '12px' }}>
                         <button
                           onClick={() => setConfirmDialog({ show: true, userId: u.id, userName: u.name })}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#0b5fff',
-                            cursor: 'pointer',
-                            fontWeight: 500,
-                            fontSize: '0.9rem',
-                            padding: 0,
-                          }}
-                        >
-                          Remove
-                        </button>
+                          style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 500, fontSize: '0.85rem', padding: '4px 0' }}
+                        >Remove</button>
                       </td>
                     </tr>
                   ))}
@@ -350,7 +296,7 @@ export default function Members() {
                 <button 
                   className="btn"
                   onClick={() => setShowAddMemberModal(false)}
-                  style={{ background: '#6c757d', color: 'white', padding: '8px 16px' }}
+                  style={{ background: '#6b7280', color: 'white', padding: '8px 16px' }}
                 >
                   Cancel
                 </button>
@@ -362,7 +308,7 @@ export default function Members() {
                       setShowAddMemberModal(false);
                     }
                   }}
-                  style={{ background: '#0b5fff', color: 'white', padding: '8px 16px' }}
+                  style={{ padding: '8px 16px' }}
                 >
                   Add
                 </button>
@@ -393,14 +339,14 @@ export default function Members() {
                 <button
                   onClick={() => setConfirmDialog({ show: false, userId: null, userName: '', action: '' })}
                   className="btn"
-                  style={{ background: '#6c757d', color: 'white', padding: '8px 24px' }}
+                  style={{ background: '#6b7280', color: 'white', padding: '8px 24px' }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => removeMemberFromTeam(confirmDialog.userId)}
                   className="btn"
-                  style={{ background: '#ff6b6b', color: 'white', padding: '8px 24px' }}
+                  style={{ background: '#dc2626', color: 'white', padding: '8px 24px' }}
                 >
                   Remove
                 </button>

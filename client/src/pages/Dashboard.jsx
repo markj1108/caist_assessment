@@ -2,29 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import TaskList from '../components/TaskList';
+import { useNavigate } from 'react-router-dom';
 
-// Stat Icons - Larger icons for right side positioning
+// Modern stat icons (larger, friendly shapes)
 const ProjectsIcon = () => (
-  <svg style={{ width: 60, height: 60, opacity: 1 }} viewBox="0 0 24 24" fill="currentColor" stroke="none">
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+  <svg style={{ width: 56, height: 56 }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="6" width="20" height="14" rx="3" fill="currentColor" opacity="0.12" />
+    <path d="M3.5 8.5h17" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+    <path d="M7 4h10l1 2H6l1-2z" fill="currentColor" opacity="0.95" />
+    <rect x="6" y="11" width="5" height="3" rx="0.8" fill="currentColor" opacity="0.98" />
   </svg>
 );
 
 const CompletedIcon = () => (
-  <svg style={{ width: 60, height: 60, opacity: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="20 6 9 17 4 12"></polyline>
+  <svg style={{ width: 56, height: 56 }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.12" />
+    <path d="M7.5 12.5l2.5 2.5L16.5 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const OverdueIcon = () => (
-  <svg style={{ width: 60, height: 60, opacity: 1 }} viewBox="0 0 24 24" fill="currentColor" stroke="none">
-    <circle cx="12" cy="12" r="10"></circle>
-    <polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" strokeWidth="2"></polyline>
+  <svg style={{ width: 56, height: 56 }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.12" />
+    <path d="M12 7v6l3 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="17.3" r="0.7" fill="currentColor" />
   </svg>
 );
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [stats, setStats] = useState({
@@ -42,7 +49,7 @@ export default function Dashboard() {
       try {
         const [projects, tasks] = await Promise.all([
           api.get('/projects'),
-          !isLeader ? api.get('/tasks/assigned') : Promise.resolve([]),
+          api.get('/tasks/assigned'),
         ]);
         setProjects(projects || []);
         setAssignedTasks(tasks || []);
@@ -69,136 +76,123 @@ export default function Dashboard() {
     load();
   }, [isLeader]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: '#64748b' }}>Loading...</div>;
+
+  const overdueProjects = projects.filter(p => p.status !== 'completed' && p.due_date && new Date(p.due_date) < new Date());
+  const activeTasks = assignedTasks.filter(t => t.status_name !== 'done');
+  const activeProjects = projects.filter(p => p.status !== 'completed');
 
   return (
     <div>
-      <h1>Dashboard</h1>
-      {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ margin: '0 0 4px 0' }}>Dashboard</h1>
+        <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>Welcome back, {user?.name?.split(' ')[0] || 'User'}</p>
+      </div>
+      {error && <div className="alert alert-danger" style={{ marginBottom: 16 }}>{error}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
+        <div className="card" style={{ padding: 24, borderLeft: '4px solid var(--primary)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ color: '#64748b', fontSize: '1.5rem', fontWeight: 500, marginBottom: 12 }}>Total Projects</div>
-              <div style={{ fontSize: '2.8rem', color: '#000000', fontWeight: 'bold', lineHeight: 1 }}>
-                {stats.totalProjects}
-              </div>
+            <div>
+              <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Projects</div>
+              <div style={{ fontSize: '2.2rem', color: '#0f172a', fontWeight: 700, lineHeight: 1 }}>{stats.totalProjects}</div>
             </div>
-            <div style={{ color: '#0b5fff', flexShrink: 0 }}>
-              <ProjectsIcon />
-            </div>
+            <div style={{ color: 'var(--primary)', opacity: 0.8, flexShrink: 0 }}><ProjectsIcon /></div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
+        <div className="card" style={{ padding: 24, borderLeft: '4px solid #059669' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ color: '#64748b', fontSize: '1.5rem', fontWeight: 500, marginBottom: 12 }}>Completed Projects</div>
-              <div style={{ fontSize: '2.8rem', color: '#000000', fontWeight: 'bold', lineHeight: 1 }}>
-                {stats.completedProjects}
-              </div>
+            <div>
+              <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Completed</div>
+              <div style={{ fontSize: '2.2rem', color: '#0f172a', fontWeight: 700, lineHeight: 1 }}>{stats.completedProjects}</div>
             </div>
-            <div style={{ color: '#28a745', flexShrink: 0 }}>
-              <CompletedIcon />
-            </div>
+            <div style={{ color: '#059669', opacity: 0.8, flexShrink: 0 }}><CompletedIcon /></div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
+        <div className="card" style={{ padding: 24, borderLeft: '4px solid #dc2626' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ color: '#64748b', fontSize: '1.5rem', fontWeight: 500, marginBottom: 12 }}>Overdue Projects</div>
-              <div style={{ fontSize: '2.8rem', color: '#000000', fontWeight: 'bold', lineHeight: 1 }}>
-                {stats.overdueProjects}
-              </div>
+            <div>
+              <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Overdue</div>
+              <div style={{ fontSize: '2.2rem', color: '#0f172a', fontWeight: 700, lineHeight: 1 }}>{stats.overdueProjects}</div>
             </div>
-            <div style={{ color: '#ff0000', flexShrink: 0 }}>
-              <OverdueIcon />
-            </div>
+            <div style={{ color: '#dc2626', opacity: 0.8, flexShrink: 0 }}><OverdueIcon /></div>
           </div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 24 }}>
-        {!isLeader && (
-          <>
-            <h3>Your Assigned Tasks ({assignedTasks.filter(t => t.status_name !== 'done').length})</h3>
-            <TaskList tasks={assignedTasks.filter(t => t.status_name !== 'done')} />
-          </>
-        )}
-      </div>
+      {/* Overdue Projects Section */}
+      {overdueProjects.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <h3 style={{ marginBottom: 12 }}>⚠ Overdue Projects</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+            {overdueProjects.map(p => (
+              <div key={p.id} className="card" style={{ cursor: 'pointer', borderLeft: '4px solid #dc2626', padding: '16px 20px' }} onClick={() => navigate(`/projects/${p.id}`)}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontWeight: 600, color: '#0f172a' }}>{p.name}</div>
+                  <span className="badge badge-danger">Overdue</span>
+                </div>
+                {p.due_date && <div style={{ marginTop: 8, color: '#dc2626', fontSize: '0.85rem' }}>Due: {new Date(p.due_date).toLocaleDateString()}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
+      {/* Assigned Tasks */}
+      {activeTasks.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <h3 style={{ marginBottom: 12 }}>Your Assigned Tasks ({activeTasks.length})</h3>
+          <TaskList tasks={activeTasks} />
+        </div>
+      )}
+
+      {/* Projects Overview */}
       <div className="card">
         <h3 style={{ marginTop: 0, marginBottom: 20 }}>Projects Overview</h3>
-        {projects.filter(p => p.status !== 'completed').length === 0 ? (
-          <div className="small" style={{ color: '#666' }}>No active projects.</div>
+        {activeProjects.length === 0 ? (
+          <div style={{ color: '#94a3b8', textAlign: 'center', padding: 24 }}>No active projects.</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {projects.filter(p => p.status !== 'completed').slice(0, 5).map(p => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {activeProjects.slice(0, 5).map(p => (
               <div
                 key={p.id}
+                onClick={() => navigate(`/projects/${p.id}`)}
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: 16,
-                  background: '#f8fafc',
-                  borderRadius: 8,
-                  border: '1px solid #e2e8f0',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '14px 16px', background: '#f8fafc', borderRadius: 10,
+                  border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.15s ease',
                 }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = '#f0f4f8';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = '#f8fafc';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#eef2ff'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
               >
-                {/* Project Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h4 style={{ margin: '0 0 4px 0', color: '#1e293b', fontSize: '1rem', fontWeight: 600 }}>
-                    {p.name}
-                  </h4>
+                  <h4 style={{ margin: '0 0 2px 0', color: '#0f172a', fontSize: '0.95rem', fontWeight: 600 }}>{p.name}</h4>
                   {p.description && (
-                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-                      {p.description.length > 60
-                        ? p.description.substring(0, 60) + '...'
-                        : p.description}
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
+                      {p.description.length > 60 ? p.description.substring(0, 60) + '...' : p.description}
                     </p>
                   )}
                 </div>
-
-                {/* Progress Section */}
-                <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, minWidth: 120 }}>
+                <div style={{ marginLeft: 20, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 110 }}>
                   {p.total_tasks > 0 ? (
                     <>
-                      <div style={{ width: 100, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${p.progress}%`,
-                            background: '#0b5fff',
-                            transition: 'width 0.3s',
-                          }}
-                        />
+                      <div style={{ width: 90, height: 5, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${p.progress}%`, background: 'var(--primary)', transition: 'width 0.3s' }} />
                       </div>
-                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>
-                        {p.progress}%
-                      </span>
+                      <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500 }}>{p.progress}%</span>
                     </>
                   ) : (
-                    <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>No tasks</span>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>No tasks</span>
                   )}
                 </div>
               </div>
             ))}
-            {projects.filter(p => p.status !== 'completed').length > 5 && (
-              <div style={{ textAlign: 'center', padding: 12, color: '#64748b', fontSize: '0.9rem' }}>
-                +{projects.filter(p => p.status !== 'completed').length - 5} more projects
+            {activeProjects.length > 5 && (
+              <div style={{ textAlign: 'center', padding: 10, color: '#64748b', fontSize: '0.85rem' }}>
+                +{activeProjects.length - 5} more projects
               </div>
             )}
           </div>

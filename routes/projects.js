@@ -31,10 +31,17 @@ router.get('/', authenticate, async (req, res) => {
     // Filter based on role
     if (roleName === 'team_member') {
       // Team members only see projects of their team leader
+      if (!req.user.team_leader_id) {
+        return res.json([]); // Not assigned to any team leader yet
+      }
       query += ` WHERE p.owner_id = $1`;
       params.push(req.user.team_leader_id);
+    } else if (roleName === 'team_leader') {
+      // Team leaders only see their own projects
+      query += ` WHERE p.owner_id = $1`;
+      params.push(req.user.id);
     }
-    // Admin and Team Leader see all projects
+    // Admin sees all projects
 
     query += ` ORDER BY p.created_at DESC`;
 
@@ -50,6 +57,9 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', authenticate, requireRole('team_leader', 'admin'), async (req, res) => {
   const { name, description, start_date, due_date } = req.body;
   if (!name) return res.status(400).json({ error: 'Missing name' });
+  // validate name: only allow letters, numbers, spaces, hyphen, underscore
+  const validName = /^[A-Za-z0-9\s\-_]+$/;
+  if (!validName.test(String(name))) return res.status(400).json({ error: 'Project name contains invalid characters' });
   try {
     const owner_id = req.user.id;
     const { rows } = await db.query(
@@ -89,6 +99,17 @@ router.get('/:id', authenticate, async (req, res) => {
     
     console.log('Query result:', rows);
     if (rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+
+    // Authorization: team members can only view their team leader's projects
+    const { rows: userRoleRows } = await db.query('SELECT name FROM roles WHERE id = $1', [req.user.role_id]);
+    const userRole = userRoleRows[0].name;
+    if (userRole === 'team_member' && rows[0].owner_id !== req.user.team_leader_id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (userRole === 'team_leader' && rows[0].owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     res.json(rows[0]);
   } catch (err) {
     console.error('Error fetching project:', err);

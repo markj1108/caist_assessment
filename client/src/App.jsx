@@ -9,6 +9,7 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import TaskDetail from './components/TaskDetail';
 import Sidebar from './components/Sidebar';
+import Settings from './pages/Settings';
 import { useAuth } from './contexts/AuthContext';
 
 function App() {
@@ -50,6 +51,10 @@ function App() {
             <Route
               path="/projects"
               element={isUserActive ? <Projects /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/settings"
+              element={isUserActive ? <Settings /> : <Navigate to="/" replace />}
             />
             <Route
               path="/tasks/:taskId"

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/modal.css';
 
 // Colors for project status indicators
-const COLORS = ['#0b5fff', '#764ba2', '#ff6b6b', '#17a2b8', '#00bcd4', '#20c997'];
+const COLORS = ['var(--primary)', '#764ba2', '#ff6b6b', '#17a2b8', '#00bcd4', '#20c997'];
 
 function getColorForProject(index) {
   return COLORS[index % COLORS.length];
@@ -26,6 +26,9 @@ export default function Projects() {
     start_date: '',
     due_date: '',
   });
+
+  // ISO date string for today to use as min on date inputs
+  const today = new Date().toISOString().split('T')[0];
   const [alert, setAlert] = useState({ show: false, type: 'success', message: '' });
 
   const isLeader = user?.role_id === 2;
@@ -52,14 +55,34 @@ export default function Projects() {
     e.preventDefault();
     setError('');
 
-    if (!formData.name.trim()) {
+    const name = formData.name.trim();
+    if (!name) {
       setAlert({ show: true, type: 'error', message: 'Project name is required' });
+      return;
+    }
+    // allow only letters, numbers, spaces, hyphen and underscore
+    const validName = /^[A-Za-z0-9\s\-_]+$/;
+    if (!validName.test(name)) {
+      setAlert({ show: true, type: 'error', message: 'Project name contains invalid characters. Use letters, numbers, spaces, - and _ only.' });
       return;
     }
 
     try {
+      // Validate dates: do not allow past dates
+      if (formData.start_date && formData.start_date < today) {
+        setAlert({ show: true, type: 'error', message: 'Start date cannot be in the past' });
+        return;
+      }
+      if (formData.due_date && formData.due_date < today) {
+        setAlert({ show: true, type: 'error', message: 'Due date cannot be in the past' });
+        return;
+      }
+      if (formData.start_date && formData.due_date && formData.start_date > formData.due_date) {
+        setAlert({ show: true, type: 'error', message: 'Start date cannot be after due date' });
+        return;
+      }
       const newProject = await api.post('/projects', {
-        name: formData.name,
+        name,
         description: formData.description || null,
         start_date: formData.start_date || null,
         due_date: formData.due_date || null,
@@ -102,7 +125,7 @@ export default function Projects() {
             className="btn"
             onClick={() => setShowForm(!showForm)}
             style={{
-              background: '#0b5fff',
+              background: 'var(--primary)',
               color: 'white',
               padding: '8px 16px',
               borderRadius: '6px',
@@ -117,11 +140,11 @@ export default function Projects() {
             }}
             onMouseEnter={e => {
               e.currentTarget.style.boxShadow = '0 4px 12px rgba(11, 95, 255, 0.3)';
-              e.currentTarget.style.background = '#0a4fd9';
+              e.currentTarget.style.background = 'var(--primary)';
             }}
             onMouseLeave={e => {
               e.currentTarget.style.boxShadow = '0 2px 8px rgba(11, 95, 255, 0.2)';
-              e.currentTarget.style.background = '#0b5fff';
+              e.currentTarget.style.background = 'var(--primary)';
             }}
           >
             + New Project
@@ -145,7 +168,7 @@ export default function Projects() {
             </div>
             <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Project Name *</label>
+              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Project Name <span className="required-star">*</span></label>
               <input
                 type="text"
                 name="name"
@@ -173,23 +196,25 @@ export default function Projects() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
               <div>
                 <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Start Date</label>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={formData.start_date}
-                  onChange={handleInputChange}
-                  className="input"
-                />
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={formData.start_date}
+                    onChange={handleInputChange}
+                    className="input"
+                    min={today}
+                  />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Due Date</label>
-                <input
-                  type="date"
-                  name="due_date"
-                  value={formData.due_date}
-                  onChange={handleInputChange}
-                  className="input"
-                />
+                  <input
+                    type="date"
+                    name="due_date"
+                    value={formData.due_date}
+                    onChange={handleInputChange}
+                    className="input"
+                    min={today}
+                  />
               </div>
             </div>
 
@@ -287,8 +312,8 @@ export default function Projects() {
                         <h4 style={{ margin: '0', color: '#1e293b', fontSize: '1.1rem', fontWeight: 600 }}>
                           {project.name}
                         </h4>
-                        <span style={{ display: 'inline-block', backgroundColor: '#0b5fff', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          In Progress
+                        <span style={{ display: 'inline-block', backgroundColor: (project.due_date && new Date(project.due_date) < new Date()) ? '#ff6b6b' : 'var(--primary)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          {(project.due_date && new Date(project.due_date) < new Date()) ? 'Overdue' : 'Active'}
                         </span>
                       </div>
 
@@ -309,12 +334,12 @@ export default function Projects() {
                             <span>{project.progress}%</span>
                           </div>
                           <div style={{ width: '100%', height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{
-                              height: '100%',
-                              width: `${project.progress}%`,
-                              background: getColorForProject(index),
-                              transition: 'width 0.3s'
-                            }} />
+                              <div style={{
+                                height: '100%',
+                                width: `${project.progress}%`,
+                                background: getColorForProject(index),
+                                transition: 'width 0.3s'
+                              }} />
                           </div>
                         </div>
                       )}
@@ -499,7 +524,7 @@ export default function Projects() {
                     setShowProjectDetail(false);
                     navigate(`/projects/${selectedProject.id}`);
                   }}
-                  style={{ background: '#0b5fff', color: 'white', padding: '8px 16px', borderRadius: 4, border: 'none', cursor: 'pointer' }}
+                  style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px', borderRadius: 4, border: 'none', cursor: 'pointer' }}
                 >
                   View Details
                 </button>

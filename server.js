@@ -13,11 +13,16 @@ const usersRoutes = require('./routes/users');
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.set('trust proxy', 1);
+
+if (!process.env.JWT_SECRET) {
+  console.warn('WARNING: JWT_SECRET is not set. Using default secret. Do NOT use in production!');
+}
 
 app.use('/auth', authRoutes);
 app.use('/projects', projectsRoutes);
 app.use('/tasks', tasksRoutes);
-app.use('/', commentsRoutes); // comments route paths defined with /tasks/:taskId/comments
+app.use('/tasks', commentsRoutes);
 app.use('/users', usersRoutes);
 
 app.get('/', (req, res) => res.json({ ok: true, message: 'TaskEr API' }));

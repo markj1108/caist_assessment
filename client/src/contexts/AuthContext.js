@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
       }
     };
 
-    const interval = setInterval(checkUserStatus, 2000); // Check every 2 seconds
+    const interval = setInterval(checkUserStatus, 30000); // Check every 30 seconds
     return () => clearInterval(interval);
   }, [user, logout]);
 
@@ -72,8 +72,22 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+  async function updateProfile({ name, current_password, new_password }) {
+    if (!user) throw new Error('Not authenticated');
+    const body = {};
+    if (typeof name !== 'undefined') body.name = name;
+    if (new_password) {
+      body.current_password = current_password;
+      body.new_password = new_password;
+    }
+    const updated = await api.put(`/users/${user.id}`, body);
+    // update local user state
+    setUser(updated);
+    return updated;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, login, register, updateProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

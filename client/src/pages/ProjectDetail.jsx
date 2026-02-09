@@ -30,6 +30,12 @@ export default function ProjectDetail() {
   const isAdmin = user?.role_id === 1;
   const canAddTask = isLeader || isAdmin;
 
+  function formatStatus(name) {
+    if (!name) return 'To Do';
+    const map = { todo: 'To Do', in_progress: 'In Progress', done: 'Done', review: 'Review', blocked: 'Blocked' };
+    return map[name.toLowerCase()] || name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
   useEffect(() => {
     loadProjectData();
   }, [projectId]);
@@ -97,14 +103,20 @@ export default function ProjectDetail() {
     e.preventDefault();
     setError('');
 
-    if (!formData.title.trim()) {
+    const title = formData.title.trim();
+    if (!title) {
       setAlert({ show: true, type: 'error', message: 'Task title is required' });
+      return;
+    }
+    const validTitle = /^[A-Za-z0-9\s\-_]+$/;
+    if (!validTitle.test(title)) {
+      setAlert({ show: true, type: 'error', message: 'Task title contains invalid characters. Use letters, numbers, spaces, - and _ only.' });
       return;
     }
 
     try {
       const newTask = await api.post(`/tasks/projects/${projectId}/tasks`, {
-        title: formData.title,
+        title,
         description: formData.description || null,
         priority: formData.priority,
         assignee_id: formData.assignee_id ? parseInt(formData.assignee_id, 10) : null,
@@ -128,14 +140,20 @@ export default function ProjectDetail() {
   async function updateTask() {
     if (!selectedTask) return;
 
-    if (!taskEditData.title.trim()) {
+    const title = (taskEditData.title || '').trim();
+    if (!title) {
       setAlert({ show: true, type: 'error', message: 'Task title is required' });
+      return;
+    }
+    const validTitle = /^[A-Za-z0-9\s\-_]+$/;
+    if (!validTitle.test(title)) {
+      setAlert({ show: true, type: 'error', message: 'Task title contains invalid characters. Use letters, numbers, spaces, - and _ only.' });
       return;
     }
     
     try {
       const updatedTask = await api.put(`/tasks/${selectedTask.id}`, {
-        title: taskEditData.title,
+        title,
         description: taskEditData.description || null,
         assignee_id: taskEditData.assignee_id ? parseInt(taskEditData.assignee_id, 10) : null,
         priority: taskEditData.priority,
@@ -152,7 +170,7 @@ export default function ProjectDetail() {
   if (loading) return <div>Loading...</div>;
   if (error) return (
     <div style={{ padding: 20 }}>
-      <button onClick={() => navigate('/projects')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0b5fff', fontSize: '1rem', marginBottom: 16 }}>← Back to Projects</button>
+      <button onClick={() => navigate('/projects')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontSize: '1rem', marginBottom: 16 }}>← Back to Projects</button>
       <div style={{ background: '#ffe6e6', color: '#c41e3a', padding: 16, borderRadius: 4, marginBottom: 16 }}>
         <strong>Error:</strong> {error}
       </div>
@@ -160,7 +178,7 @@ export default function ProjectDetail() {
   );
   if (!project) return (
     <div style={{ padding: 20 }}>
-      <button onClick={() => navigate('/projects')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0b5fff', fontSize: '1rem', marginBottom: 16 }}>← Back to Projects</button>
+      <button onClick={() => navigate('/projects')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontSize: '1rem', marginBottom: 16 }}>← Back to Projects</button>
       <div style={{ background: '#ffe6e6', color: '#c41e3a', padding: 16, borderRadius: 4, marginBottom: 16 }}>
         <strong>Error:</strong> Project not found (ID: {projectId})
       </div>
@@ -191,7 +209,7 @@ export default function ProjectDetail() {
             <button
               className="btn"
               onClick={() => setShowForm(!showForm)}
-              style={{ background: '#0b5fff', color: 'white', padding: '8px 16px', marginLeft: 0 }}
+              style={{ padding: '8px 16px', marginLeft: 0 }}
             >
               {showForm ? 'Cancel' : '+ Add Task'}
             </button>
@@ -307,7 +325,7 @@ export default function ProjectDetail() {
             </div>
             <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Task Title *</label>
+              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Task Title <span className="required-star">*</span></label>
               <input
                 type="text"
                 name="title"
@@ -407,7 +425,7 @@ export default function ProjectDetail() {
                     >
                       {task.priority}
                     </span>
-                    <span className="small">Status: {task.status_name || 'To Do'}</span>
+                    <span className="small">Status: {formatStatus(task.status_name)}</span>
                     {task.assignee_name && (
                       <span className="small">Assigned: {task.assignee_name}</span>
                     )}
@@ -418,7 +436,7 @@ export default function ProjectDetail() {
                     <button
                       onClick={() => openTaskEdit(task)}
                       className="btn"
-                      style={{ background: '#0b5fff', color: 'white', padding: '4px 8px', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '0.85rem' }}
+                      style={{ background: 'var(--primary)', color: 'white', padding: '4px 8px', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '0.85rem' }}
                     >
                       Edit
                     </button>
@@ -546,7 +564,7 @@ export default function ProjectDetail() {
                     <button
                       type="submit"
                       className="btn"
-                      style={{ background: '#0b5fff', color: 'white', padding: '8px 16px' }}
+                      style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px' }}
                     >
                       Save Changes
                     </button>
@@ -556,7 +574,7 @@ export default function ProjectDetail() {
                     type="button"
                     className="btn"
                     onClick={() => setShowTaskEdit(false)}
-                    style={{ background: '#0b5fff', color: 'white', padding: '8px 16px' }}
+                    style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px' }}
                   >
                     Close
                   </button>

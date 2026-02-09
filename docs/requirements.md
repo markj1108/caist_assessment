@@ -7,6 +7,8 @@
     - they can create projects, assign roles, set deadlines, and monitor progress in real time.
 - Member 
     - see their assigned roles and mark their progress.
+- Admin
+    - edit their roles, enable/disable their account
 
 # 3. User Stories
 - As a Team Leader, I want to create multiple projects and break them down into tasks to distribute to my members.

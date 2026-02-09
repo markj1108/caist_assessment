@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authenticate, requireRole } = require('../middleware/auth');
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
 
 // GET /users - list all users (admin only)
 router.get('/', authenticate, requireRole('admin'), async (req, res) => {
@@ -77,6 +79,50 @@ router.get('/:id', authenticate, async (req, res) => {
     
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /users/:id - update user's name and/or password (self or admin)
+router.put('/:id', authenticate, async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { name, current_password, new_password } = req.body;
+
+  try {
+    // allow if the requester is the user themselves or an admin
+    const { rows: roleRows } = await db.query('SELECT name FROM roles WHERE id = $1', [req.user.role_id]);
+    const requesterRole = roleRows.length ? roleRows[0].name : null;
+    if (req.user.id !== userId && requesterRole !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    // If changing password, current_password must be provided and verified
+    if (new_password) {
+      if (!current_password) return res.status(400).json({ error: 'Current password required' });
+
+      const { rows: urows } = await db.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+      if (urows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+      const ok = await bcrypt.compare(current_password, urows[0].password_hash);
+      if (!ok) return res.status(401).json({ error: 'Invalid current password' });
+
+      const hashed = await bcrypt.hash(new_password, SALT_ROUNDS);
+      await db.query('UPDATE users SET password_hash = $1, name = COALESCE($2, name), updated_at = now() WHERE id = $3', [hashed, name, userId]);
+    } else {
+      // only update name if provided
+      if (typeof name !== 'undefined') {
+        if (!String(name).trim()) return res.status(400).json({ error: 'Name cannot be blank' });
+        const validName = /^[A-Za-z\s]+$/;
+        if (!validName.test(String(name).trim())) return res.status(400).json({ error: 'Name may only contain letters and spaces' });
+        await db.query('UPDATE users SET name = $1, updated_at = now() WHERE id = $2', [name.trim(), userId]);
+      }
+    }
+
+    const { rows: updated } = await db.query('SELECT id, name, email, role_id, is_active FROM users WHERE id = $1', [userId]);
+    if (updated.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(updated[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

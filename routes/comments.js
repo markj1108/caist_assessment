@@ -4,9 +4,17 @@ const router = express.Router();
 const db = require('../db');
 const { authenticate } = require('../middleware/auth');
 
-// GET /tasks/:taskId/comments
-router.get('/tasks/:taskId/comments', authenticate, async (req, res) => {
+// GET /:taskId/comments (mounted at /tasks)
+router.get('/:taskId/comments', authenticate, async (req, res) => {
   try {
+    // Verify task exists and check authorization
+    const { rows: taskCheck } = await db.query('SELECT assignee_id, reporter_id FROM tasks WHERE id = $1', [req.params.taskId]);
+    if (taskCheck.length === 0) return res.status(404).json({ error: 'Task not found' });
+    const { rows: roleRows } = await db.query('SELECT name FROM roles WHERE id = $1', [req.user.role_id]);
+    if (roleRows[0].name === 'team_member' && taskCheck[0].assignee_id !== req.user.id && taskCheck[0].reporter_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const { rows } = await db.query(
       `SELECT c.*, u.name as author_name
        FROM comments c
@@ -22,11 +30,19 @@ router.get('/tasks/:taskId/comments', authenticate, async (req, res) => {
   }
 });
 
-// POST /tasks/:taskId/comments
-router.post('/tasks/:taskId/comments', authenticate, async (req, res) => {
+// POST /:taskId/comments (mounted at /tasks)
+router.post('/:taskId/comments', authenticate, async (req, res) => {
   const { body } = req.body;
   if (!body) return res.status(400).json({ error: 'Missing body' });
   try {
+    // Verify task exists and check authorization
+    const { rows: taskCheck } = await db.query('SELECT assignee_id, reporter_id FROM tasks WHERE id = $1', [req.params.taskId]);
+    if (taskCheck.length === 0) return res.status(404).json({ error: 'Task not found' });
+    const { rows: roleRows } = await db.query('SELECT name FROM roles WHERE id = $1', [req.user.role_id]);
+    if (roleRows[0].name === 'team_member' && taskCheck[0].assignee_id !== req.user.id && taskCheck[0].reporter_id !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const author_id = req.user.id;
     const task_id = parseInt(req.params.taskId, 10);
     const { rows } = await db.query(

@@ -14,6 +14,9 @@ async function getStatusId(name) {
 router.post('/projects/:projectId/tasks', authenticate, requireRole('team_leader', 'admin'), async (req, res) => {
   const { title, description, assignee_id, status_id, priority, due_date, parent_task_id } = req.body;
   if (!title) return res.status(400).json({ error: 'Missing title' });
+  // validate title: allow letters, numbers, spaces, hyphen, underscore
+  const validTitle = /^[A-Za-z0-9\s\-_]+$/;
+  if (!validTitle.test(String(title))) return res.status(400).json({ error: 'Task title contains invalid characters' });
   try {
 
     let finalStatusId = status_id;
@@ -45,7 +48,7 @@ router.get('/projects/:projectId/tasks', authenticate, async (req, res) => {
        LEFT JOIN statuses s on s.id = t.status_id
        LEFT JOIN users u on u.id = t.assignee_id
        WHERE t.project_id = $1
-       ORDER BY t.due_date NULLS LAST, t.priority DESC`,
+       ORDER BY t.due_date NULLS LAST, CASE t.priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END`,
       [project_id]
     );
     res.json(rows);
@@ -68,6 +71,39 @@ router.get('/assigned', authenticate, async (req, res) => {
       [req.user.id]
     );
     res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /tasks/statuses - list all available statuses
+router.get('/statuses', authenticate, async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT id, name, order_index FROM statuses ORDER BY order_index');
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /tasks/:id - get a single task by ID
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const tid = parseInt(req.params.id, 10);
+    if (isNaN(tid)) return res.status(400).json({ error: 'Invalid task ID' });
+    const { rows } = await db.query(
+      `SELECT t.*, s.name as status_name, u.name as assignee_name, p.name as project_name
+       FROM tasks t
+       LEFT JOIN statuses s ON s.id = t.status_id
+       LEFT JOIN users u ON u.id = t.assignee_id
+       LEFT JOIN projects p ON p.id = t.project_id
+       WHERE t.id = $1`,
+      [tid]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Task not found' });
+    res.json(rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -101,6 +137,11 @@ router.put('/:id', authenticate, async (req, res) => {
 
     for (const key of (isLeader ? allowedForLeader : allowedForAssignee)) {
       if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        // if updating title, validate characters
+        if (key === 'title') {
+          const validTitle = /^[A-Za-z0-9\s\-_]+$/;
+          if (!validTitle.test(String(req.body.title))) return res.status(400).json({ error: 'Task title contains invalid characters' });
+        }
         updates.push(`${key} = $${idx}`);
         params.push(req.body[key]);
         idx++;
