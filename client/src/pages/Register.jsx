@@ -65,11 +65,11 @@ export default function Register() {
         <form onSubmit={onSubmit}>
           <div className="login-form-row">
             <label>Full Name</label>
-            <input className="login-input" value={name} onChange={e => setName(e.target.value)} placeholder="John Doe" required />
+            <input className="login-input" value={name} onChange={e => setName(e.target.value)} placeholder="Mark Justine" required />
           </div>
           <div className="login-form-row">
             <label>Email</label>
-            <input className="login-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required />
+            <input className="login-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@test.com" required />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="login-form-row">

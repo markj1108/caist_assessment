@@ -59,7 +59,7 @@ export default function Login() {
           </div>
         )}
         {isLocked && (
-          <div style={{ textAlign: 'center', marginBottom: 16, padding: '10px 14px', background: '#fef3c7', borderRadius: 8, color: '#92400e', fontWeight: 600, fontSize: '0.9rem', border: '1px solid #fcd34d' }}>
+          <div style={{ textAlign: 'center', marginBottom: 16, padding: '10px 14px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontWeight: 600, fontSize: '0.9rem', border: '1px solid #dc2626' }}>
             🔒 Locked — try again in {lockoutSeconds}s
           </div>
         )}

@@ -159,14 +159,13 @@ export default function Dashboard() {
             {activeProjects.slice(0, 5).map(p => (
               <div
                 key={p.id}
-                onClick={() => navigate(`/projects/${p.id}`)}
+
                 style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '14px 16px', background: '#f8fafc', borderRadius: 10,
-                  border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.15s ease',
+                  border: '1px solid #e2e8f0', transition: 'all 0.15s ease',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#eef2ff'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h4 style={{ margin: '0 0 2px 0', color: '#0f172a', fontSize: '0.95rem', fontWeight: 600 }}>{p.name}</h4>

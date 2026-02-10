@@ -168,7 +168,7 @@ export default function Tasks() {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.borderColor = '#e2e8f0';
                 }}
-                onClick={() => window.location.href = `/tasks/${task.id}`}
+
               >
                 {/* Left accent bar */}
                 <div style={{

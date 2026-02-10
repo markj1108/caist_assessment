@@ -55,7 +55,7 @@ function getRoleName(roleId) {
   return 'Team Member';
 }
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -86,12 +86,17 @@ export default function Sidebar() {
   const initials = (user?.name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
   return (
-    <aside className="sidebar">
+    <>
+    {mobileOpen && <div className="sidebar-overlay" onClick={onClose} />}
+    <aside className={`sidebar${mobileOpen ? ' sidebar--open' : ''}`}>
       <div className="sidebar-header">
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
           <span style={{ background: 'var(--primary)', color: 'white', width: 28, height: 28, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700 }}>≡</span>
           TaskER
         </h3>
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -102,6 +107,7 @@ export default function Sidebar() {
               key={item.path}
               to={item.path}
               className={`sidebar-item ${isActive(item.path) ? 'active' : ''}`}
+              onClick={onClose}
             >
               <span className="sidebar-icon"><IconComponent /></span>
               <span className="sidebar-label">{item.label}</span>
@@ -140,5 +146,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }
